@@ -61,16 +61,10 @@ struct ZoomableScrollView<Content: View>: UIViewRepresentable {
         context.coordinator.host = host
 
         DispatchQueue.main.async {
-            // Fit canvas width to screen with a little padding
-            let zoom = max(0.15, (scrollView.bounds.width / canvasWidth) * 0.95)
-            scrollView.zoomScale = zoom
-
-            // Start centered on the main content area (left clusters + key blockers)
-            let contentCenterX: CGFloat = 1400
-            let contentCenterY: CGFloat = 700
-            let startX = max(0, contentCenterX * zoom - scrollView.bounds.width / 2)
-            let startY = max(0, contentCenterY * zoom - scrollView.bounds.height / 2)
-            scrollView.contentOffset = CGPoint(x: startX, y: startY)
+            scrollView.zoomScale = 0.35
+            let midX = max(0, canvasWidth * scrollView.zoomScale / 2 - scrollView.bounds.width / 2)
+            let midY = max(0, canvasHeight * scrollView.zoomScale / 2 - scrollView.bounds.height / 2)
+            scrollView.contentOffset = CGPoint(x: midX, y: midY)
         }
 
         return scrollView
