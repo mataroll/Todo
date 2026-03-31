@@ -48,8 +48,8 @@ struct CardActionMenu: View {
             ConnectionPickerView(node: node, onDismiss: { showConnect = false })
                 .environmentObject(service)
         }
-        .onChange(of: showEdit) { if !$0 { onDismiss() } }
-        .onChange(of: showConnect) { if !$0 { onDismiss() } }
+        .onChange(of: showEdit) { _, val in if !val { onDismiss() } }
+        .onChange(of: showConnect) { _, val in if !val { onDismiss() } }
     }
 }
 

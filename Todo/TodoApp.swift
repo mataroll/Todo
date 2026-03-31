@@ -7,11 +7,19 @@
 
 import SwiftUI
 import FirebaseCore
+import FirebaseFirestore
+import UserNotifications
+import ActivityKit
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   func application(_ application: UIApplication,
                    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
     FirebaseApp.configure()
+    let cache = PersistentCacheSettings(sizeBytes: NSNumber(value: FirestoreCacheSizeUnlimited))
+    let settings = FirestoreSettings()
+    settings.cacheSettings = cache
+    Firestore.firestore().settings = settings
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     return true
   }
 }
@@ -27,6 +35,10 @@ struct TodoApp: App {
                 .environmentObject(firebaseService)
                 .onAppear {
                     firebaseService.startListening()
+                }
+                .onChange(of: firebaseService.nodes) { _, nodes in
+                    let rings = HomeView.buildRings(nodes: nodes)
+                    LiveActivityManager.shared.update(rings: rings)
                 }
         }
     }

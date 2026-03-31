@@ -7,6 +7,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    ActivityRingsRow(rings: computeRings())
                     summaryHeader
                     statsGrid
                     activeNodesSection
@@ -42,6 +43,23 @@ struct HomeView: View {
             StatCard(title: "חסומים", value: "\(service.nodes.filter { $0.status == .blocked }.count)", icon: "lock.fill", color: .gray)
             StatCard(title: "הושלמו", value: "\(service.nodes.filter { $0.status == .done }.count)", icon: "checkmark.circle.fill", color: .blue)
         }
+    }
+
+    func computeRings() -> [RingData] {
+        HomeView.buildRings(nodes: service.nodes)
+    }
+
+    static func buildRings(nodes: [Node]) -> [RingData] {
+        let total   = nodes.count
+        let done    = nodes.filter { $0.status == .done }.count
+        let active  = nodes.filter { $0.status == .inProgress }.count
+        let blocked = nodes.filter { $0.status == .blocked }.count
+
+        return [
+            RingData(id: "done",    progress: total > 0 ? Double(done)    / Double(total) : 0, color: .green, label: "הושלם"),
+            RingData(id: "active",  progress: total > 0 ? Double(active)  / Double(total) : 0, color: .blue,  label: "פעיל"),
+            RingData(id: "blocked", progress: total > 0 ? Double(blocked) / Double(total) : 0, color: .red,   label: "חסום"),
+        ]
     }
 
     var activeNodesSection: some View {

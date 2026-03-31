@@ -112,6 +112,9 @@ struct Node: Identifiable, Codable, Equatable {
     var type: String
     var cardSize: CardSize
     var customColor: String?             // hex e.g. "#F5E6C8"
+    var reminderDate: Date?
+    var photoFileNames: [String]
+    var attachedFileNames: [String]
 
     init(id: String? = nil, title: String, category: NodeCategory, status: NodeStatus = .open, dependencies: [String] = [], notes: String? = nil, link: String? = nil, priority: Int = 0, type: String = "task", cardSize: CardSize = .medium, customColor: String? = nil) {
         self.id = id
@@ -126,6 +129,8 @@ struct Node: Identifiable, Codable, Equatable {
         self.type = type
         self.cardSize = cardSize
         self.customColor = customColor
+        self.photoFileNames = []
+        self.attachedFileNames = []
         self.createdAt = Date()
     }
 }

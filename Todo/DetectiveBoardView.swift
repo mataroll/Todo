@@ -120,12 +120,11 @@ struct DetectiveBoardView: View {
                 computeDefaultPositions()
                 service.startListeningPositions()
             }
-            .onChange(of: service.nodes) { _ in
+            .onChange(of: service.nodes) { _, _ in
                 computeDefaultPositions()
                 service.initializePositions(defaultPositions)
             }
-            .onChange(of: service.positions) { _ in
-                // positions loaded from Firestore — initialize any missing ones
+            .onChange(of: service.positions) { _, _ in
                 service.initializePositions(defaultPositions)
             }
             .onDisappear {

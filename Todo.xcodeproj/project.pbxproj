@@ -9,9 +9,19 @@
 /* Begin PBXBuildFile section */
 		A3AB711F2F7AD76A0062E363 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = A3AB711E2F7AD76A0062E363 /* FirebaseFirestore */; };
 		A3AB71212F7AD7770062E363 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A3AB71202F7AD7770062E363 /* FirebaseCore */; };
+		A3AB71D62F7BE4130062E363 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3AB71D52F7BE4130062E363 /* WidgetKit.framework */; };
+		A3AB71D82F7BE4130062E363 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3AB71D72F7BE4130062E363 /* SwiftUI.framework */; };
+		A3AB71E92F7BE4140062E363 /* TodoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A3AB71D42F7BE4130062E363 /* TodoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A3AB71E72F7BE4140062E363 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A3EDFD412F7968F200B22E2E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A3AB71D32F7BE4130062E363;
+			remoteInfo = TodoWidgetExtension;
+		};
 		A3EDFD592F7968F300B22E2E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A3EDFD412F7968F200B22E2E /* Project object */;
@@ -28,13 +38,48 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A3AB71EA2F7BE4140062E363 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A3AB71E92F7BE4140062E363 /* TodoWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		A3AB71D42F7BE4130062E363 /* TodoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TodoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3AB71D52F7BE4130062E363 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		A3AB71D72F7BE4130062E363 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		A3EDFD492F7968F200B22E2E /* Todo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Todo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3EDFD582F7968F300B22E2E /* TodoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3EDFD622F7968F300B22E2E /* TodoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A3AB71ED2F7BE4140062E363 /* Exceptions for "TodoWidget" folder in "TodoWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A3AB71D32F7BE4130062E363 /* TodoWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A3AB71D92F7BE4130062E363 /* TodoWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A3AB71ED2F7BE4140062E363 /* Exceptions for "TodoWidget" folder in "TodoWidgetExtension" target */,
+			);
+			path = TodoWidget;
+			sourceTree = "<group>";
+		};
 		A3EDFD4B2F7968F200B22E2E /* Todo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Todo;
@@ -53,6 +98,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A3AB71D12F7BE4130062E363 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A3AB71D82F7BE4130062E363 /* SwiftUI.framework in Frameworks */,
+				A3AB71D62F7BE4130062E363 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A3EDFD462F7968F200B22E2E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -82,6 +136,8 @@
 		A3AB711D2F7AD76A0062E363 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A3AB71D52F7BE4130062E363 /* WidgetKit.framework */,
+				A3AB71D72F7BE4130062E363 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -92,6 +148,7 @@
 				A3EDFD4B2F7968F200B22E2E /* Todo */,
 				A3EDFD5B2F7968F300B22E2E /* TodoTests */,
 				A3EDFD652F7968F300B22E2E /* TodoUITests */,
+				A3AB71D92F7BE4130062E363 /* TodoWidget */,
 				A3AB711D2F7AD76A0062E363 /* Frameworks */,
 				A3EDFD4A2F7968F200B22E2E /* Products */,
 			);
@@ -103,6 +160,7 @@
 				A3EDFD492F7968F200B22E2E /* Todo.app */,
 				A3EDFD582F7968F300B22E2E /* TodoTests.xctest */,
 				A3EDFD622F7968F300B22E2E /* TodoUITests.xctest */,
+				A3AB71D42F7BE4130062E363 /* TodoWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -110,6 +168,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A3AB71D32F7BE4130062E363 /* TodoWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3AB71EE2F7BE4140062E363 /* Build configuration list for PBXNativeTarget "TodoWidgetExtension" */;
+			buildPhases = (
+				A3AB71D02F7BE4130062E363 /* Sources */,
+				A3AB71D12F7BE4130062E363 /* Frameworks */,
+				A3AB71D22F7BE4130062E363 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A3AB71D92F7BE4130062E363 /* TodoWidget */,
+			);
+			name = TodoWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = TodoWidgetExtension;
+			productReference = A3AB71D42F7BE4130062E363 /* TodoWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A3EDFD482F7968F200B22E2E /* Todo */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A3EDFD6C2F7968F300B22E2E /* Build configuration list for PBXNativeTarget "Todo" */;
@@ -117,10 +197,12 @@
 				A3EDFD452F7968F200B22E2E /* Sources */,
 				A3EDFD462F7968F200B22E2E /* Frameworks */,
 				A3EDFD472F7968F200B22E2E /* Resources */,
+				A3AB71EA2F7BE4140062E363 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A3AB71E82F7BE4140062E363 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A3EDFD4B2F7968F200B22E2E /* Todo */,
@@ -190,6 +272,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					A3AB71D32F7BE4130062E363 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					A3EDFD482F7968F200B22E2E = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -223,11 +308,19 @@
 				A3EDFD482F7968F200B22E2E /* Todo */,
 				A3EDFD572F7968F300B22E2E /* TodoTests */,
 				A3EDFD612F7968F300B22E2E /* TodoUITests */,
+				A3AB71D32F7BE4130062E363 /* TodoWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A3AB71D22F7BE4130062E363 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A3EDFD472F7968F200B22E2E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -252,6 +345,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A3AB71D02F7BE4130062E363 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A3EDFD452F7968F200B22E2E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -276,6 +376,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A3AB71E82F7BE4140062E363 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A3AB71D32F7BE4130062E363 /* TodoWidgetExtension */;
+			targetProxy = A3AB71E72F7BE4140062E363 /* PBXContainerItemProxy */;
+		};
 		A3EDFD5A2F7968F300B22E2E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A3EDFD482F7968F200B22E2E /* Todo */;
@@ -289,6 +394,74 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		A3AB71EB2F7BE4140062E363 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = TodoWidget/TodoWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSK77HB4M3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TodoWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TodoWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mataroll.Todo.TodoWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A3AB71EC2F7BE4140062E363 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = TodoWidget/TodoWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CSK77HB4M3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TodoWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TodoWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mataroll.Todo.TodoWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		A3EDFD6A2F7968F300B22E2E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -413,11 +586,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Todo/Todo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CSK77HB4M3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "כדי להוסיף משימות ליומן שלך";
+				INFOPLIST_KEY_NSCameraUsageDescription = "כדי לצלם תמונות למשימות";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "כדי לצרף תמונות למשימות";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "כדי להוסיף משימות לתזכורות שלך";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -445,11 +625,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Todo/Todo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CSK77HB4M3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "כדי להוסיף משימות ליומן שלך";
+				INFOPLIST_KEY_NSCameraUsageDescription = "כדי לצלם תמונות למשימות";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "כדי לצרף תמונות למשימות";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "כדי להוסיף משימות לתזכורות שלך";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -478,8 +665,14 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LAUYA46MGB;
+				DEVELOPMENT_TEAM = CSK77HB4M3;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "כדי להוסיף משימות ליומן שלך";
+				INFOPLIST_KEY_NSCameraUsageDescription = "כדי לצלם תמונות למשימות";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "כדי לצרף תמונות למשימות";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "כדי להוסיף משימות לתזכורות שלך";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mataroll.TodoTests;
@@ -500,8 +693,14 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LAUYA46MGB;
+				DEVELOPMENT_TEAM = CSK77HB4M3;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "כדי להוסיף משימות ליומן שלך";
+				INFOPLIST_KEY_NSCameraUsageDescription = "כדי לצלם תמונות למשימות";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "כדי לצרף תמונות למשימות";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "כדי להוסיף משימות לתזכורות שלך";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mataroll.TodoTests;
@@ -521,8 +720,14 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LAUYA46MGB;
+				DEVELOPMENT_TEAM = CSK77HB4M3;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "כדי להוסיף משימות ליומן שלך";
+				INFOPLIST_KEY_NSCameraUsageDescription = "כדי לצלם תמונות למשימות";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "כדי לצרף תמונות למשימות";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "כדי להוסיף משימות לתזכורות שלך";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mataroll.TodoUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -541,8 +746,14 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = LAUYA46MGB;
+				DEVELOPMENT_TEAM = CSK77HB4M3;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "כדי להוסיף משימות ליומן שלך";
+				INFOPLIST_KEY_NSCameraUsageDescription = "כדי לצלם תמונות למשימות";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "כדי לצרף תמונות למשימות";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "כדי להוסיף משימות לתזכורות שלך";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mataroll.TodoUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -559,6 +770,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A3AB71EE2F7BE4140062E363 /* Build configuration list for PBXNativeTarget "TodoWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3AB71EB2F7BE4140062E363 /* Debug */,
+				A3AB71EC2F7BE4140062E363 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A3EDFD442F7968F200B22E2E /* Build configuration list for PBXProject "Todo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

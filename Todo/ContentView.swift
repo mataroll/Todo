@@ -24,7 +24,7 @@ struct ContentView: View {
 
             DetectiveBoardView()
                 .tabItem {
-                    Label("לוח בלש", systemImage: "pin.map.fill")
+                    Label("לוח בלש", image: "BoardIcon")
                 }
         }
         .environment(\.layoutDirection, .rightToLeft)

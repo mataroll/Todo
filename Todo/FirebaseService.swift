@@ -1,6 +1,8 @@
 import Foundation
 import FirebaseFirestore
 import Combine
+import UserNotifications
+import WidgetKit
 
 @MainActor
 class FirebaseService: ObservableObject {
@@ -10,13 +12,14 @@ class FirebaseService: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
-    private let db = Firestore.firestore()
+    nonisolated(unsafe) private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
     func startListening() {
-        isLoading = true
+        // Only show loading spinner on first launch (no cached data yet)
+        isLoading = nodes.isEmpty
         listener = db.collection("nodes")
-            .addSnapshotListener { [weak self] snapshot, error in
+            .addSnapshotListener(includeMetadataChanges: false) { [weak self] snapshot, error in
                 guard let self else { return }
                 self.isLoading = false
                 if let error {
@@ -28,6 +31,7 @@ class FirebaseService: ObservableObject {
                 } ?? []
                 
                 // Auto-compute blocked status
+                self.saveWidgetData(rawNodes)
                 self.nodes = rawNodes.map { node in
                     var updatedNode = node
                     if node.status != .done {
@@ -56,7 +60,7 @@ class FirebaseService: ObservableObject {
     }
 
     func addNode(_ node: Node) {
-        try? db.collection("nodes").addDocument(from: node)
+        _ = try? db.collection("nodes").addDocument(from: node)
     }
 
     func deleteNode(_ node: Node) {
@@ -103,7 +107,25 @@ class FirebaseService: ObservableObject {
 
     func updateNode(_ node: Node) {
         guard let id = node.id else { return }
-        try? db.collection("nodes").document(id).setData(from: node)
+        _ = try? db.collection("nodes").document(id).setData(from: node)
+        scheduleNotification(for: node)
+    }
+
+    func scheduleNotification(for node: Node) {
+        guard let id = node.id else { return }
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [id])
+
+        guard let date = node.reminderDate, date > Date(), node.status != .done else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = node.title
+        content.body = node.notes ?? "תזכורת למשימה"
+        content.sound = .default
+
+        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+        center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
     }
 
     // MARK: - Board Positions
@@ -130,7 +152,26 @@ class FirebaseService: ObservableObject {
         positionsListener?.remove()
     }
 
+    private func saveWidgetData(_ nodes: [Node]) {
+        struct WidgetTask: Codable {
+            let id, title, status, category: String
+        }
+        let tasks = nodes
+            .filter { $0.status != .done }
+            .sorted { $0.priority < $1.priority }
+            .map { WidgetTask(id: $0.id ?? "", title: $0.title, status: $0.status.rawValue, category: $0.category.rawValue) }
+        if let data = try? JSONEncoder().encode(tasks) {
+            UserDefaults(suiteName: "group.com.mataroll.Todo")?.set(data, forKey: "widgetTasks")
+        }
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
     func wipeAndReseed() {
+        // Encode seed data on MainActor before entering nonisolated callbacks
+        let seedPairs: [(String, [String: Any])] = SeedData.getSeedNodes().compactMap { node in
+            guard let id = node.id, let data = try? Firestore.Encoder().encode(node) else { return nil }
+            return (id, data)
+        }
         db.collection("nodes").getDocuments { snapshot, _ in
             guard let docs = snapshot?.documents else { return }
             let batch = self.db.batch()
@@ -140,12 +181,10 @@ class FirebaseService: ObservableObject {
                     let batch2 = self.db.batch()
                     snapshot2?.documents.forEach { batch2.deleteDocument($0.reference) }
                     batch2.commit { _ in
-                        let nodes = SeedData.getSeedNodes()
                         let batch3 = self.db.batch()
-                        for node in nodes {
-                            guard let id = node.id else { continue }
+                        for (id, data) in seedPairs {
                             let ref = self.db.collection("nodes").document(id)
-                            try? batch3.setData(from: node, forDocument: ref)
+                            batch3.setData(data, forDocument: ref)
                         }
                         batch3.commit()
                     }
