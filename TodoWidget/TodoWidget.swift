@@ -1,14 +1,18 @@
 import WidgetKit
 import SwiftUI
 
-private let appGroup = "group.com.mataroll.Todo"
+private let firestoreURL =
+    "https://firestore.googleapis.com/v1/projects/life-center-985b5/databases/(default)/documents/nodes" +
+    "?key=AIzaSyAmsRrT2DFGUmz4Y2U_64MUWnCtwvPZC-c&pageSize=200"
 
-// Shared data model written by main app, read by widget
+// MARK: - Models
+
 struct WidgetTask: Codable, Identifiable {
     let id: String
     let title: String
     let status: String   // "inProgress", "open", "blocked", "done"
     let category: String
+    let priority: Int
 }
 
 struct TaskEntry: TimelineEntry {
@@ -20,26 +24,69 @@ struct TaskEntry: TimelineEntry {
     var topTasks: [WidgetTask] { tasks.filter { $0.status != "done" }.prefix(5).map { $0 } }
 }
 
+// MARK: - Firestore REST helpers
+
+private struct FirestoreResponse: Decodable {
+    let documents: [FirestoreDocument]?
+}
+
+private struct FirestoreDocument: Decodable {
+    let name: String
+    let fields: [String: FirestoreField]
+}
+
+private struct FirestoreField: Decodable {
+    let stringValue: String?
+    let integerValue: String?   // Firestore sends ints as strings in REST
+    let booleanValue: Bool?
+}
+
+private func parseWidgetTasks(from data: Data) -> [WidgetTask] {
+    guard let response = try? JSONDecoder().decode(FirestoreResponse.self, from: data),
+          let docs = response.documents else { return [] }
+
+    return docs.compactMap { doc -> WidgetTask? in
+        let parts = doc.name.split(separator: "/")
+        guard let docId = parts.last.map(String.init),
+              let title  = doc.fields["title"]?.stringValue,
+              let status = doc.fields["status"]?.stringValue
+        else { return nil }
+        let category = doc.fields["category"]?.stringValue ?? ""
+        let priority = Int(doc.fields["priority"]?.integerValue ?? "0") ?? 0
+        return WidgetTask(id: docId, title: title, status: status, category: category, priority: priority)
+    }
+    .filter { $0.status != "done" }
+    .sorted { $0.priority < $1.priority }
+}
+
+// MARK: - Provider
+
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> TaskEntry {
         TaskEntry(date: Date(), tasks: [])
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TaskEntry) -> Void) {
-        completion(TaskEntry(date: Date(), tasks: loadFromAppGroup()))
+        Task {
+            let tasks = await fetchFromFirestore()
+            completion(TaskEntry(date: Date(), tasks: tasks))
+        }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TaskEntry>) -> Void) {
-        let entry = TaskEntry(date: Date(), tasks: loadFromAppGroup())
-        let next = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
-        completion(Timeline(entries: [entry], policy: .after(next)))
+        Task {
+            let tasks = await fetchFromFirestore()
+            let entry = TaskEntry(date: Date(), tasks: tasks)
+            let next  = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+            completion(Timeline(entries: [entry], policy: .after(next)))
+        }
     }
 
-    private func loadFromAppGroup() -> [WidgetTask] {
-        guard let data = UserDefaults(suiteName: appGroup)?.data(forKey: "widgetTasks"),
-              let decoded = try? JSONDecoder().decode([WidgetTask].self, from: data)
+    private func fetchFromFirestore() async -> [WidgetTask] {
+        guard let url = URL(string: firestoreURL),
+              let (data, _) = try? await URLSession.shared.data(from: url)
         else { return [] }
-        return decoded
+        return parseWidgetTasks(from: data)
     }
 }
 
@@ -49,27 +96,30 @@ struct SmallWidgetView: View {
     let entry: TaskEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .center, spacing: 8) {
             Text("לוח בלש")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.secondary)
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(Color(red: 0.3, green: 0.2, blue: 0.1))
+                .widgetAccentable()
 
             Spacer()
 
-            HStack(spacing: 12) {
+            HStack(spacing: 16) {
                 statView(count: entry.inProgress, label: "פעיל", color: .green)
                 statView(count: entry.blocked,    label: "חסום", color: .red)
                 statView(count: entry.open,       label: "פתוח", color: .yellow)
             }
+            .frame(maxWidth: .infinity, alignment: .center)
 
             Spacer()
 
             if let top = entry.topTasks.first {
                 Text(top.title)
                     .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.primary.opacity(1.0))
                     .lineLimit(2)
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .padding(12)
@@ -80,10 +130,10 @@ struct SmallWidgetView: View {
         VStack(spacing: 2) {
             Text("\(count)")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundColor(color)
+                .foregroundStyle(color)
             Text(label)
                 .font(.system(size: 9))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -107,8 +157,9 @@ struct MediumWidgetView: View {
             // Stats column
             VStack(spacing: 8) {
                 Text("לוח בלש")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 12, weight: .heavy))
+                    .foregroundStyle(.primary.opacity(1.0))
+                    .widgetAccentable()
                 Divider()
                 statRow(count: entry.inProgress, label: "פעיל", color: .green)
                 statRow(count: entry.blocked,    label: "חסום", color: .red)
@@ -128,6 +179,7 @@ struct MediumWidgetView: View {
                         Spacer()
                         Text(task.title)
                             .font(.system(size: 11))
+                            .foregroundStyle(.primary.opacity(1.0))
                             .lineLimit(1)
                         Text(statusDot(task.status))
                             .font(.system(size: 10))
@@ -145,10 +197,10 @@ struct MediumWidgetView: View {
         HStack {
             Text("\(count)")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(color)
+                .foregroundStyle(color)
             Text(label)
                 .font(.system(size: 9))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
             Spacer()
         }
     }
