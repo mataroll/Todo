@@ -1,7 +1,8 @@
 import ActivityKit
 import SwiftUI
 
-// MARK: - Shared ring state (codable for ActivityKit)
+// Shared types needed by both the main app and widget extension.
+// These must match the definitions in Todo/RingsActivityAttributes.swift exactly.
 
 struct RingState: Codable, Hashable {
     let id: String
@@ -25,7 +26,7 @@ struct RingsActivityAttributes: ActivityAttributes {
         var codenames: String
         var habitSymbols: [String]
         var confirmedHabits: [Bool]
-        var habitIds: [String]       // Firestore doc IDs for each habit
+        var habitIds: [String]
         var updatedAt: Date
     }
 }

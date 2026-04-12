@@ -1,208 +1,261 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
-private let firestoreURL =
-    "https://firestore.googleapis.com/v1/projects/life-center-985b5/databases/(default)/documents/nodes" +
-    "?key=AIzaSyAmsRrT2DFGUmz4Y2U_64MUWnCtwvPZC-c&pageSize=200"
+private let appGroup = "group.com.mataroll.Todo"
 
 // MARK: - Models
 
 struct WidgetTask: Codable, Identifiable {
     let id: String
     let title: String
-    let status: String   // "inProgress", "open", "blocked", "done"
+    let status: String   // "done", "inProgress", "open", "blocked"
     let category: String
-    let priority: Int
+    let coachType: String // "daily", "weekly", "budget", "none"
+    let price: Double?
+    let isConfirmed: Bool
 }
 
 struct TaskEntry: TimelineEntry {
     let date: Date
     let tasks: [WidgetTask]
-    var inProgress: Int { tasks.filter { $0.status == "inProgress" }.count }
-    var blocked: Int    { tasks.filter { $0.status == "blocked"    }.count }
-    var open: Int       { tasks.filter { $0.status == "open"       }.count }
-    var topTasks: [WidgetTask] { tasks.filter { $0.status != "done" }.prefix(5).map { $0 } }
-}
 
-// MARK: - Firestore REST helpers
-
-private struct FirestoreResponse: Decodable {
-    let documents: [FirestoreDocument]?
-}
-
-private struct FirestoreDocument: Decodable {
-    let name: String
-    let fields: [String: FirestoreField]
-}
-
-private struct FirestoreField: Decodable {
-    let stringValue: String?
-    let integerValue: String?   // Firestore sends ints as strings in REST
-    let booleanValue: Bool?
-}
-
-private func parseWidgetTasks(from data: Data) -> [WidgetTask] {
-    guard let response = try? JSONDecoder().decode(FirestoreResponse.self, from: data),
-          let docs = response.documents else { return [] }
-
-    return docs.compactMap { doc -> WidgetTask? in
-        let parts = doc.name.split(separator: "/")
-        guard let docId = parts.last.map(String.init),
-              let title  = doc.fields["title"]?.stringValue,
-              let status = doc.fields["status"]?.stringValue
-        else { return nil }
-        let category = doc.fields["category"]?.stringValue ?? ""
-        let priority = Int(doc.fields["priority"]?.integerValue ?? "0") ?? 0
-        return WidgetTask(id: docId, title: title, status: status, category: category, priority: priority)
+    var dailyProgress: Double {
+        let daily = tasks.filter { $0.coachType == "daily" }
+        guard !daily.isEmpty else { return 0 }
+        let done = daily.filter { $0.status == "done" || $0.isConfirmed }.count
+        return Double(done) / Double(daily.count)
     }
-    .filter { $0.status != "done" }
-    .sorted { $0.priority < $1.priority }
+
+    var weeklyProgress: Double {
+        let weekly = tasks.filter { $0.coachType == "weekly" }
+        guard !weekly.isEmpty else { return 0 }
+        let done = weekly.filter { $0.status == "done" }.count
+        return Double(done) / Double(weekly.count)
+    }
+
+    var totalSpending: Int {
+        Int(tasks.filter { $0.coachType == "budget" && ($0.price ?? 0) > 200 }.compactMap { $0.price }.reduce(0, +))
+    }
+
+    var budgetUsed: Double {
+        tasks.filter { $0.coachType == "budget" }.compactMap { $0.price }.reduce(0, +)
+    }
+
+    var budgetProgress: Double { min(1.0, budgetUsed / 2000.0) }
+
+    var weeklyTasks: [WidgetTask] {
+        tasks.filter { $0.coachType == "weekly" && $0.status != "done" }.prefix(5).map { $0 }
+    }
 }
 
 // MARK: - Provider
 
+private let fallbackTasks: [WidgetTask] = [
+    WidgetTask(id: "run", title: "ריצה 90 יום", status: "inProgress", category: "keyBlockers", coachType: "daily", price: nil, isConfirmed: true),
+    WidgetTask(id: "photos", title: "לנקות תמונות", status: "open", category: "recurring", coachType: "daily", price: nil, isConfirmed: false),
+    WidgetTask(id: "piano", title: "פסנתר", status: "open", category: "recurring", coachType: "daily", price: nil, isConfirmed: false),
+    WidgetTask(id: "dad", title: "דיבור עם אבא", status: "open", category: "keyBlockers", coachType: "weekly", price: nil, isConfirmed: false),
+    WidgetTask(id: "haifa", title: "חיפה", status: "open", category: "keyBlockers", coachType: "weekly", price: nil, isConfirmed: false),
+    WidgetTask(id: "citron", title: "ציטרון", status: "open", category: "keyBlockers", coachType: "weekly", price: nil, isConfirmed: false),
+    WidgetTask(id: "pants", title: "מכנסיים ופוף", status: "open", category: "purchases", coachType: "budget", price: 250, isConfirmed: false),
+    WidgetTask(id: "teeth", title: "הלבנת שיניים", status: "open", category: "purchases", coachType: "budget", price: 600, isConfirmed: false),
+]
+
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> TaskEntry {
-        TaskEntry(date: Date(), tasks: [])
+        TaskEntry(date: Date(), tasks: fallbackTasks)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TaskEntry) -> Void) {
-        Task {
-            let tasks = await fetchFromFirestore()
-            completion(TaskEntry(date: Date(), tasks: tasks))
-        }
+        completion(TaskEntry(date: Date(), tasks: readFromShared()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TaskEntry>) -> Void) {
-        Task {
-            let tasks = await fetchFromFirestore()
-            let entry = TaskEntry(date: Date(), tasks: tasks)
-            let next  = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
-            completion(Timeline(entries: [entry], policy: .after(next)))
-        }
+        let entry = TaskEntry(date: Date(), tasks: readFromShared())
+        let next = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+        completion(Timeline(entries: [entry], policy: .after(next)))
     }
 
-    private func fetchFromFirestore() async -> [WidgetTask] {
-        guard let url = URL(string: firestoreURL),
-              let (data, _) = try? await URLSession.shared.data(from: url)
-        else { return [] }
-        return parseWidgetTasks(from: data)
+    private func readFromShared() -> [WidgetTask] {
+        guard let defaults = UserDefaults(suiteName: appGroup),
+              let data = defaults.data(forKey: "widgetTasks"),
+              let tasks = try? JSONDecoder().decode([WidgetTask].self, from: data),
+              !tasks.isEmpty
+        else { return fallbackTasks }
+        return tasks
     }
 }
 
-// MARK: - Small Widget
+// MARK: - Views
 
-struct SmallWidgetView: View {
+struct PulseWidgetView: View {
     let entry: TaskEntry
 
     var body: some View {
-        VStack(alignment: .center, spacing: 8) {
-            Text("לוח בלש")
-                .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(Color(red: 0.3, green: 0.2, blue: 0.1))
-                .widgetAccentable()
-
-            Spacer()
-
-            HStack(spacing: 16) {
-                statView(count: entry.inProgress, label: "פעיל", color: .green)
-                statView(count: entry.blocked,    label: "חסום", color: .red)
-                statView(count: entry.open,       label: "פתוח", color: .yellow)
+        HStack(spacing: 12) {
+            ZStack {
+                RingView(progress: entry.dailyProgress, color: .blue, radius: 20)
+                RingView(progress: entry.weeklyProgress, color: .green, radius: 14)
+                RingView(progress: entry.budgetProgress, color: .yellow, radius: 8)
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(width: 44, height: 44)
 
-            Spacer()
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("\(Int(entry.dailyProgress * 100))")
+                        .foregroundColor(.blue)
+                    Text("\(Int(entry.weeklyProgress * 100))")
+                        .foregroundColor(.green)
+                    Text("\(Int(entry.budgetProgress * 100))")
+                        .foregroundColor(.yellow)
+                    Text("₪\(entry.totalSpending)")
+                        .foregroundColor(.white)
+                        .padding(.leading, 4)
+                }
+                .font(.system(size: 12, weight: .black))
 
-            if let top = entry.topTasks.first {
-                Text(top.title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.primary.opacity(1.0))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                Text("יומי • שבועי • יעד • הוצאות")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundColor(.white.opacity(0.4))
+                    .textCase(.uppercase)
             }
         }
         .padding(12)
+        .background(Color(red: 0.1, green: 0.11, blue: 0.14))
         .environment(\.layoutDirection, .rightToLeft)
-    }
-
-    func statView(count: Int, label: String, color: Color) -> some View {
-        VStack(spacing: 2) {
-            Text("\(count)")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(color)
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-        }
     }
 }
 
-// MARK: - Medium Widget
-
-struct MediumWidgetView: View {
-    let entry: TaskEntry
-
-    var statusDot: (String) -> String = { status in
-        switch status {
-        case "inProgress": return "🟢"
-        case "blocked":    return "⚫"
-        case "open":       return "🟡"
-        default:           return "✅"
-        }
-    }
+struct RingView: View {
+    let progress: Double
+    let color: Color
+    let radius: CGFloat
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Stats column
-            VStack(spacing: 8) {
-                Text("לוח בלש")
-                    .font(.system(size: 12, weight: .heavy))
-                    .foregroundStyle(.primary.opacity(1.0))
-                    .widgetAccentable()
-                Divider()
-                statRow(count: entry.inProgress, label: "פעיל", color: .green)
-                statRow(count: entry.blocked,    label: "חסום", color: .red)
-                statRow(count: entry.open,       label: "פתוח", color: .orange)
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.15), lineWidth: 4)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: radius * 2, height: radius * 2)
+    }
+}
+
+struct WeeklyVisionWidgetView: View {
+    let entry: TaskEntry
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            HStack {
+                Text("שבוע \(Calendar.current.component(.weekOfYear, from: Date()))")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Color.green.opacity(0.1))
+                    .clipShape(Capsule())
                 Spacer()
+                Text("משימות עד שבת")
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundColor(.black)
             }
-            .frame(width: 60)
-            .padding(.leading, 12)
-            .padding(.top, 12)
 
-            Divider().padding(.vertical, 8)
-
-            // Task list
-            VStack(alignment: .trailing, spacing: 4) {
-                ForEach(entry.topTasks) { task in
+            VStack(spacing: 12) {
+                ForEach(entry.weeklyTasks) { task in
                     HStack {
+                        Button(intent: MarkTaskDoneIntent(taskId: task.id)) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.system(size: 16))
+                                .foregroundColor(.blue)
+                        }
+                        .buttonStyle(.plain)
                         Spacer()
                         Text(task.title)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.primary.opacity(1.0))
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.black)
                             .lineLimit(1)
-                        Text(statusDot(task.status))
-                            .font(.system(size: 10))
                     }
                 }
-                Spacer()
             }
-            .padding(.trailing, 12)
-            .padding(.top, 12)
+
+            Spacer()
+
+            HStack {
+                Text("₪ נותר: \(2000 - entry.totalSpending)")
+                    .font(.system(size: 10, weight: .black))
+                    .foregroundColor(.gray)
+                Spacer()
+                Text("\"עקביות היא המפתח\"")
+                    .font(.system(size: 10, weight: .medium))
+                    .italic()
+                    .foregroundColor(.gray.opacity(0.6))
+            }
+            .padding(.top, 8)
+            .border(width: 1, edges: [.top], color: Color.black.opacity(0.05))
         }
+        .padding(20)
+        .background(Color.white)
         .environment(\.layoutDirection, .rightToLeft)
     }
+}
 
-    func statRow(count: Int, label: String, color: Color) -> some View {
-        HStack {
-            Text("\(count)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(color)
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-            Spacer()
+// MARK: - Lock Screen Widget (accessoryRectangular)
+
+struct LockScreenPulseView: View {
+    let entry: TaskEntry
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .stroke(Color.blue.opacity(0.2), lineWidth: 2.5)
+                    .frame(width: 28, height: 28)
+                Circle()
+                    .trim(from: 0, to: entry.dailyProgress)
+                    .stroke(Color.blue, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 28, height: 28)
+                    .rotationEffect(.degrees(-90))
+
+                Circle()
+                    .stroke(Color.green.opacity(0.2), lineWidth: 2.5)
+                    .frame(width: 20, height: 20)
+                Circle()
+                    .trim(from: 0, to: entry.weeklyProgress)
+                    .stroke(Color.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 20, height: 20)
+                    .rotationEffect(.degrees(-90))
+
+                Circle()
+                    .stroke(Color.yellow.opacity(0.2), lineWidth: 2.5)
+                    .frame(width: 12, height: 12)
+                Circle()
+                    .trim(from: 0, to: entry.budgetProgress)
+                    .stroke(Color.yellow, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .frame(width: 12, height: 12)
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: 32, height: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 3) {
+                    Text("\(Int(entry.dailyProgress * 100))")
+                        .foregroundColor(.blue)
+                    Text("\(Int(entry.weeklyProgress * 100))")
+                        .foregroundColor(.green)
+                    Text("\(Int(entry.budgetProgress * 100))")
+                        .foregroundColor(.yellow)
+                }
+                .font(.system(size: 13, weight: .black))
+
+                Text("₪\(entry.totalSpending)")
+                    .font(.system(size: 11, weight: .bold))
+            }
         }
+        .environment(\.layoutDirection, .rightToLeft)
     }
 }
 
@@ -214,9 +267,10 @@ struct TodoWidgetEntryView: View {
 
     var body: some View {
         switch family {
-        case .systemSmall:  SmallWidgetView(entry: entry)
-        case .systemMedium: MediumWidgetView(entry: entry)
-        default:            MediumWidgetView(entry: entry)
+        case .accessoryRectangular: LockScreenPulseView(entry: entry)
+        case .systemSmall:  PulseWidgetView(entry: entry)
+        case .systemLarge:  WeeklyVisionWidgetView(entry: entry)
+        default:            PulseWidgetView(entry: entry)
         }
     }
 }
@@ -229,10 +283,12 @@ struct TodoWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             TodoWidgetEntryView(entry: entry)
-                .containerBackground(Color(red: 0.98, green: 0.96, blue: 0.90), for: .widget)
+                .containerBackground(Color.white, for: .widget)
         }
-        .configurationDisplayName("לוח בלש")
-        .description("משימות פעילות מהלוח שלך")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .configurationDisplayName("Coach")
+        .description("המבט השבועי והיומי שלך")
+        .supportedFamilies([.accessoryRectangular, .systemSmall, .systemLarge])
     }
 }
+
+// EdgeBorder and border(width:edges:color:) are defined in RingsLiveActivity.swift

@@ -26,6 +26,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("לוח בלש", image: "BoardIcon")
                 }
+
+            MoneyView()
+                .tabItem {
+                    Label("כסף", systemImage: "banknote")
+                }
         }
         .environment(\.layoutDirection, .rightToLeft)
     }

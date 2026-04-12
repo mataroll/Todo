@@ -96,6 +96,11 @@ struct DetectiveBoardView: View {
     @State private var defaultPositions: [String: CGPoint] = [:]
     @State private var scale: CGFloat = 0.35
     @State private var menuNode: Node? = nil
+    @State private var hidePurchases: Bool = true
+
+    var displayNodes: [Node] {
+        hidePurchases ? service.nodes.filter { $0.category != .purchases } : service.nodes
+    }
 
     func savedPosition(for node: Node) -> CGPoint {
         guard let id = node.id else { return CGPoint(x: 200, y: 200) }
@@ -116,6 +121,17 @@ struct DetectiveBoardView: View {
             .navigationTitle("לוח בלש")
             .navigationBarTitleDisplayMode(.inline)
             .environment(\.layoutDirection, .rightToLeft)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        withAnimation { hidePurchases.toggle() }
+                    } label: {
+                        Label(hidePurchases ? "הצג רכישות" : "הסתר רכישות",
+                              systemImage: hidePurchases ? "cart.badge.plus" : "cart.fill")
+                            .font(.footnote)
+                    }
+                }
+            }
             .onAppear {
                 computeDefaultPositions()
                 service.startListeningPositions()
@@ -150,7 +166,7 @@ struct DetectiveBoardView: View {
 
             // Category titles
             ForEach(NodeCategory.allCases, id: \.self) { category in
-                if service.nodes.contains(where: { $0.category == category }),
+                if displayNodes.contains(where: { $0.category == category }),
                    let origin = categoryOrigins[category] {
                     Text(category.label)
                         .font(.system(size: 20, weight: .heavy))
@@ -166,7 +182,7 @@ struct DetectiveBoardView: View {
             }
 
             // Draggable node cards
-            ForEach(service.nodes) { node in
+            ForEach(displayNodes) { node in
                 DraggableBoardCard(
                     node: node,
                     savedPosition: savedPosition(for: node),
@@ -182,7 +198,7 @@ struct DetectiveBoardView: View {
 
             // String lines on top of everything
             Canvas { context, _ in
-                for node in service.nodes {
+                for node in displayNodes {
                     guard let nodeId = node.id else { continue }
                     let from = livePositions[nodeId]
                         ?? service.positions[nodeId]
@@ -190,7 +206,7 @@ struct DetectiveBoardView: View {
                         ?? CGPoint(x: 200, y: 200)
 
                     for conn in node.connections {
-                        guard service.nodes.contains(where: { $0.id == conn.toId }) else { continue }
+                        guard displayNodes.contains(where: { $0.id == conn.toId }) else { continue }
                         let to = livePositions[conn.toId]
                             ?? service.positions[conn.toId]
                             ?? defaultPositions[conn.toId]

@@ -1,5 +1,5 @@
 import Foundation
-import FirebaseFirestore
+import SwiftUI
 
 enum NodeStatus: String, Codable, CaseIterable {
     case blocked, open, inProgress, done
@@ -96,13 +96,62 @@ enum CardSize: String, Codable, CaseIterable {
     }
 }
 
+enum HabitCategory: String, Codable, CaseIterable {
+    case exercise, work, study, hobby, none
+
+    var label: String {
+        switch self {
+        case .exercise: return "ספורט"
+        case .work:     return "עבודה"
+        case .study:    return "לימודים"
+        case .hobby:    return "תחביב"
+        case .none:     return "ללא"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .exercise: return "🏃"
+        case .work:     return "💻"
+        case .study:    return "📖"
+        case .hobby:    return "🎹"
+        case .none:     return ""
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .exercise: return .green
+        case .work:     return .blue
+        case .study:    return .orange
+        case .hobby:    return .purple
+        case .none:     return .gray
+        }
+    }
+}
+
+enum CoachType: String, Codable, CaseIterable {
+    case daily, weekly, yearly, budget, none
+
+    var color: Color {
+        switch self {
+        case .daily:  return .blue
+        case .weekly: return .green
+        case .yearly: return .orange
+        case .budget: return .yellow
+        case .none:   return .gray
+        }
+    }
+}
+
 struct Node: Identifiable, Codable, Equatable {
-    @DocumentID var id: String?
+    var id: String?
     var title: String
     var category: NodeCategory
     var status: NodeStatus
-    var dependencies: [String]          // kept for backwards compat / blocking logic
-    var connections: [Connection]        // rich connections with color
+    var coachType: CoachType
+    var dependencies: [String]
+    var connections: [Connection]
     var notes: String?
     var link: String?
     var photoURL: String?
@@ -111,16 +160,26 @@ struct Node: Identifiable, Codable, Equatable {
     var priority: Int
     var type: String
     var cardSize: CardSize
-    var customColor: String?             // hex e.g. "#F5E6C8"
+    var customColor: String?
     var reminderDate: Date?
     var photoFileNames: [String]
     var attachedFileNames: [String]
+    var price: Double?
+    var startTime: Date?
+    var endTime: Date?
+    var isConfirmed: Bool
+    var habitCategory: HabitCategory
 
-    init(id: String? = nil, title: String, category: NodeCategory, status: NodeStatus = .open, dependencies: [String] = [], notes: String? = nil, link: String? = nil, priority: Int = 0, type: String = "task", cardSize: CardSize = .medium, customColor: String? = nil) {
+    init(id: String? = nil, title: String, category: NodeCategory, status: NodeStatus = .open,
+         coachType: CoachType = .none, dependencies: [String] = [], notes: String? = nil,
+         link: String? = nil, priority: Int = 0, type: String = "task", cardSize: CardSize = .medium,
+         customColor: String? = nil, price: Double? = nil, startTime: Date? = nil,
+         endTime: Date? = nil, isConfirmed: Bool = false, habitCategory: HabitCategory = .none) {
         self.id = id
         self.title = title
         self.category = category
         self.status = status
+        self.coachType = coachType
         self.dependencies = dependencies
         self.connections = []
         self.notes = notes
@@ -129,6 +188,11 @@ struct Node: Identifiable, Codable, Equatable {
         self.type = type
         self.cardSize = cardSize
         self.customColor = customColor
+        self.price = price
+        self.startTime = startTime
+        self.endTime = endTime
+        self.isConfirmed = isConfirmed
+        self.habitCategory = habitCategory
         self.photoFileNames = []
         self.attachedFileNames = []
         self.createdAt = Date()
@@ -136,8 +200,8 @@ struct Node: Identifiable, Codable, Equatable {
 }
 
 struct Connection: Codable, Equatable {
-    var toId: String         // the node this line points TO
-    var colorHex: String     // e.g. "#CC1111"
+    var toId: String
+    var colorHex: String
 
     init(toId: String, colorHex: String = "#CC1111") {
         self.toId = toId
