@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NodeDetailView: View {
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     let node: Node
 
     var body: some View {

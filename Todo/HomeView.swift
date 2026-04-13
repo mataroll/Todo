@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
 
     var body: some View {
         NavigationStack {

@@ -14,7 +14,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct TodoApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var firebaseService = FirebaseService.shared
+    @StateObject private var firebaseService = SupabaseService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -23,6 +23,7 @@ struct TodoApp: App {
                 .onAppear {
                     firebaseService.startListening()
                     firebaseService.fetchDailyLogs()
+                    Task { await EventKitManager.shared.requestPermissions() }
                     let nodes = firebaseService.nodes.isEmpty ? SeedData.getSeedNodes() : firebaseService.nodes
                     let rings = HomeView.buildRings(nodes: nodes)
                     LiveActivityManager.shared.update(rings: rings, nodes: nodes)

@@ -39,8 +39,8 @@ private let isoDecoder: JSONDecoder = {
 }()
 
 @MainActor
-class FirebaseService: ObservableObject {
-    static let shared = FirebaseService()
+class SupabaseService: ObservableObject {
+    static let shared = SupabaseService()
 
     @Published var nodes: [Node] = []
     @Published var isLoading = false
@@ -217,6 +217,7 @@ class FirebaseService: ObservableObject {
     }
 
     func savePosition(nodeId: String, position: CGPoint) {
+        positions[nodeId] = position
         let row = PositionRow(id: nodeId, x: Double(position.x), y: Double(position.y))
         guard let body = try? JSONEncoder().encode(row),
               let req = request(path: "node_positions",
@@ -327,7 +328,7 @@ class FirebaseService: ObservableObject {
         let isPerfect = !active.isEmpty && active.allSatisfy { $0 == 1.0 }
 
         let row = DailyLogRow(
-            id: FirebaseService.logKey(),
+            id: SupabaseService.logKey(),
             date: isoFormatter.string(from: Date()),
             overallProgress: overall,
             isPerfect: isPerfect,
@@ -378,7 +379,7 @@ class FirebaseService: ObservableObject {
         var date = Calendar.current.startOfDay(for: Date())
         let cal = Calendar.current
         while true {
-            let key = FirebaseService.logKey(for: date)
+            let key = SupabaseService.logKey(for: date)
             guard let log = dailyLogs[key], log.isPerfect else { break }
             streak += 1
             date = cal.date(byAdding: .day, value: -1, to: date)!

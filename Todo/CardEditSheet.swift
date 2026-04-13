@@ -2,7 +2,7 @@ import SwiftUI
 import EventKit
 
 struct CardEditSheet: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     @Environment(\.dismiss) var dismiss
 
     let node: Node
@@ -20,8 +20,8 @@ struct CardEditSheet: View {
     @State private var showCamera = false
     @State private var attachedFileNames: [String]
     @State private var showFilePicker = false
-    @State private var calendarMessage: String? = nil
-    @State private var reminderMessage: String? = nil
+    @State private var addToCalendar: Bool
+    @State private var calendarEnd: Date
 
     init(node: Node) {
         self.node = node
@@ -33,6 +33,8 @@ struct CardEditSheet: View {
         _cardColor      = State(initialValue: Color(hex: node.customColor ?? "") ?? Color(red: 0.98, green: 0.96, blue: 0.82))
         _reminderDate      = State(initialValue: node.reminderDate ?? Date().addingTimeInterval(3600))
         _hasReminder       = State(initialValue: node.reminderDate != nil)
+        _addToCalendar     = State(initialValue: node.id.map { EventKitManager.shared.hasEvent(for: $0) } ?? false)
+        _calendarEnd       = State(initialValue: (node.reminderDate ?? Date().addingTimeInterval(3600)).addingTimeInterval(3600))
         _photoFileNames    = State(initialValue: node.photoFileNames)
         _attachedFileNames = State(initialValue: node.attachedFileNames)
     }
@@ -175,38 +177,16 @@ struct CardEditSheet: View {
                     FilePicker { _, name in attachedFileNames.append(name) }
                 }
 
-                Section("תזכורת") {
-                    Toggle("הגדר תזכורת", isOn: $hasReminder)
-                    if hasReminder {
-                        DatePicker("", selection: $reminderDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.graphical)
+                Section("תזכורת ויומן") {
+                    Toggle("✅ הוסף לתזכורות Apple", isOn: $hasReminder)
+                    Toggle("📅 הוסף ליומן Apple", isOn: $addToCalendar)
+                    if hasReminder || addToCalendar {
+                        DatePicker("תאריך ושעה", selection: $reminderDate, in: Date()..., displayedComponents: [.date, .hourAndMinute])
                             .environment(\.locale, Locale(identifier: "he"))
                     }
-                }
-
-                Section("תזכורות Apple") {
-                    Button {
-                        addToReminders()
-                    } label: {
-                        Label("הוסף לתזכורות", systemImage: "checklist")
-                    }
-                    if let msg = reminderMessage {
-                        Text(msg)
-                            .font(.footnote)
-                            .foregroundColor(msg.contains("✓") ? .green : .red)
-                    }
-                }
-
-                Section("יומן") {
-                    Button {
-                        addToCalendar()
-                    } label: {
-                        Label("הוסף ליומן Apple", systemImage: "calendar.badge.plus")
-                    }
-                    if let msg = calendarMessage {
-                        Text(msg)
-                            .font(.footnote)
-                            .foregroundColor(msg.contains("✓") ? .green : .red)
+                    if addToCalendar {
+                        DatePicker("סיום", selection: $calendarEnd, in: reminderDate..., displayedComponents: [.date, .hourAndMinute])
+                            .environment(\.locale, Locale(identifier: "he"))
                     }
                 }
 
@@ -271,59 +251,6 @@ struct CardEditSheet: View {
         }
     }
 
-    func addToReminders() {
-        let store = EKEventStore()
-        store.requestFullAccessToReminders { granted, _ in
-            DispatchQueue.main.async {
-                guard granted else {
-                    reminderMessage = "❌ אין גישה לתזכורות"
-                    return
-                }
-                let reminder = EKReminder(eventStore: store)
-                reminder.title = title.isEmpty ? node.title : title
-                reminder.notes = notes.isEmpty ? nil : notes
-                reminder.calendar = store.defaultCalendarForNewReminders()
-                if hasReminder {
-                    let alarm = EKAlarm(absoluteDate: reminderDate)
-                    reminder.addAlarm(alarm)
-                    let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: reminderDate)
-                    reminder.dueDateComponents = comps
-                }
-                do {
-                    try store.save(reminder, commit: true)
-                    reminderMessage = "✓ נוסף לתזכורות"
-                } catch {
-                    reminderMessage = "❌ שגיאה: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    func addToCalendar() {
-        let store = EKEventStore()
-        store.requestFullAccessToEvents { granted, _ in
-            DispatchQueue.main.async {
-                guard granted else {
-                    calendarMessage = "❌ אין גישה ליומן"
-                    return
-                }
-                let event = EKEvent(eventStore: store)
-                event.title = title.isEmpty ? node.title : title
-                event.notes = notes.isEmpty ? nil : notes
-                let start = hasReminder ? reminderDate : Date().addingTimeInterval(3600)
-                event.startDate = start
-                event.endDate = start.addingTimeInterval(3600)
-                event.calendar = store.defaultCalendarForNewEvents
-                do {
-                    try store.save(event, span: .thisEvent)
-                    calendarMessage = "✓ נוסף ליומן"
-                } catch {
-                    calendarMessage = "❌ שגיאה: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-
     func save() {
         var updated = node
         updated.title       = title.trimmingCharacters(in: .whitespaces)
@@ -332,10 +259,25 @@ struct CardEditSheet: View {
         updated.link        = link.isEmpty ? nil : link
         updated.notes       = notes.isEmpty ? nil : notes
         updated.customColor = cardColor.hexString
-        updated.reminderDate      = hasReminder ? reminderDate : nil
+        updated.reminderDate      = (hasReminder || addToCalendar) ? reminderDate : nil
         updated.photoFileNames    = photoFileNames
         updated.attachedFileNames = attachedFileNames
         service.updateNode(updated)
+
+        // Sync to Apple Reminders
+        if hasReminder {
+            EventKitManager.shared.syncReminder(for: updated)
+        } else if let id = updated.id {
+            EventKitManager.shared.deleteReminder(for: id)
+        }
+
+        // Sync to Apple Calendar
+        if addToCalendar {
+            EventKitManager.shared.syncEvent(for: updated, start: reminderDate, end: calendarEnd)
+        } else if let id = updated.id {
+            EventKitManager.shared.deleteEvent(for: id)
+        }
+
         dismiss()
     }
 }

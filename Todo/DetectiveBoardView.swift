@@ -105,7 +105,7 @@ struct ZoomableScrollView<Content: View>: UIViewRepresentable {
 // MARK: - Detective Board
 
 struct DetectiveBoardView: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     @State private var livePositions: [String: CGPoint] = [:]
     @State private var defaultPositions: [String: CGPoint] = [:]
     @State private var scale: CGFloat = 0.35
@@ -766,7 +766,7 @@ struct ConnectionDeleteMenu: View {
 // MARK: - Quick add task sheet (from board long press)
 
 struct BoardQuickAddSheet: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     @Environment(\.dismiss) var dismiss
     let canvasPosition: CGPoint
 

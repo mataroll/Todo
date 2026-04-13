@@ -1,7 +1,7 @@
 import Foundation
 
 struct SeedData {
-    static func seed(into service: FirebaseService) {
+    static func seed(into service: SupabaseService) {
         let nodes = getSeedNodes()
         for node in nodes {
             service.addNode(node)

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
 
     var body: some View {
         TabView {
@@ -38,5 +38,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .environmentObject(FirebaseService.shared)
+        .environmentObject(SupabaseService.shared)
 }

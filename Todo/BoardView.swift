@@ -8,7 +8,7 @@ enum ListTab: String, CaseIterable {
 }
 
 struct BoardView: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     @State private var selectedTab: ListTab = .daily
     @State private var selectedNode: Node? = nil
     @State private var showAdd = false

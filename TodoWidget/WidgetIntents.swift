@@ -1,4 +1,5 @@
 import AppIntents
+import ActivityKit
 import Foundation
 import WidgetKit
 
@@ -44,6 +45,17 @@ struct ConfirmHabitIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         guard !taskId.isEmpty else { return .result() }
         await patchNode(id: taskId, body: ["isConfirmed": !currentValue])
+
+        // Immediately flip the confirmed state in the live activity so UI updates without opening app
+        for activity in Activity<RingsActivityAttributes>.activities {
+            var state = activity.content.state
+            if let idx = state.habitIds.firstIndex(of: taskId), idx < state.confirmedHabits.count {
+                state.confirmedHabits[idx] = !currentValue
+                state.updatedAt = Date()
+                await activity.update(ActivityContent(state: state, staleDate: nil))
+            }
+        }
+
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }

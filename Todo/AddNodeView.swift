@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AddNodeView: View {
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
 
     @State private var title = ""
     @State private var category = NodeCategory.oneTime

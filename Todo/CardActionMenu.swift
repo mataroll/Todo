@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CardActionMenu: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     let node: Node
     let onDismiss: () -> Void
 

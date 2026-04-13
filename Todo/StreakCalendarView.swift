@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct StreakCalendarView: View {
-    @EnvironmentObject var service: FirebaseService
+    @EnvironmentObject var service: SupabaseService
     @State private var displayMonth: Date = Date()
     @State private var selectedLog: DailyLog? = nil
     @State private var selectedDateStr: String? = nil
@@ -65,7 +65,7 @@ struct StreakCalendarView: View {
             LazyVGrid(columns: columns, spacing: 4) {
                 ForEach(calendarDays.indices, id: \.self) { i in
                     if let date = calendarDays[i] {
-                        let key = FirebaseService.logKey(for: date)
+                        let key = SupabaseService.logKey(for: date)
                         let log = service.dailyLogs[key]
                         let isToday = cal.isDateInToday(date)
                         let isFuture = date > Date()
