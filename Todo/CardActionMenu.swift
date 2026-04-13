@@ -31,6 +31,33 @@ struct CardActionMenu: View {
                     MenuButton(title: "חיבור", icon: "arrow.triangle.branch", color: Color(red: 0.7, green: 0.15, blue: 0.15)) {
                         showConnect = true
                     }
+
+                    // Quick size picker
+                    HStack(spacing: 0) {
+                        ForEach(CardSize.allCases, id: \.self) { size in
+                            Button {
+                                var updated = node
+                                updated.cardSize = size
+                                service.updateNode(updated)
+                                onDismiss()
+                            } label: {
+                                Text(size.label)
+                                    .font(.system(size: 17, weight: node.cardSize == size ? .bold : .regular))
+                                    .foregroundColor(node.cardSize == size ? .white : .primary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(node.cardSize == size ? Color.blue : Color.clear)
+                            }
+                        }
+                    }
+                    .background(.regularMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    // Delete
+                    MenuButton(title: "מחק משימה", icon: "trash.fill", color: .red) {
+                        service.deleteNode(node)
+                        onDismiss()
+                    }
                 }
                 .padding(.horizontal, 48)
 
