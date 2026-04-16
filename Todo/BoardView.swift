@@ -13,8 +13,6 @@ struct BoardView: View {
     @State private var selectedNode: Node? = nil
     @State private var showAdd = false
 
-    // MARK: - Filtered nodes
-
     var dailyNodes:  [Node] { service.nodes.filter { $0.coachType == .daily } }
     var weeklyNodes: [Node] { service.nodes.filter { $0.coachType == .weekly } }
     var yearlyNodes: [Node] { service.nodes.filter { $0.coachType == .yearly } }
@@ -29,43 +27,45 @@ struct BoardView: View {
         }
     }
 
-    // MARK: - Progress
-
-    var dailyDone:  Int { dailyNodes.filter  { $0.isConfirmed || $0.status == .done }.count }
-    var weeklyDone: Int { weeklyNodes.filter { $0.status == .done }.count }
-    var yearlyDone: Int { yearlyNodes.filter { $0.status == .done }.count }
-
-    var currentDone:  Int { switch selectedTab { case .daily: return dailyDone; case .weekly: return weeklyDone; case .yearly: return yearlyDone; case .all: return 0 } }
-    var currentTotal: Int { currentNodes.count }
-    var currentProgress: Double {
-        guard currentTotal > 0 else { return 0 }
-        return Double(currentDone) / Double(currentTotal)
+    var currentDone: Int {
+        switch selectedTab {
+        case .daily:  return dailyNodes.filter  { $0.isConfirmed || $0.status == .done }.count
+        case .weekly: return weeklyNodes.filter { $0.status == .done }.count
+        case .yearly: return yearlyNodes.filter { $0.status == .done }.count
+        case .all:    return 0
+        }
     }
 
-    // MARK: - Color
+    var currentProgress: Double {
+        guard currentNodes.count > 0 else { return 0 }
+        return Double(currentDone) / Double(currentNodes.count)
+    }
 
     var tabColor: Color {
         switch selectedTab {
         case .daily:  return .blue
         case .weekly: return .green
         case .yearly: return .orange
-        case .all:    return .primary
+        case .all:    return .white
         }
     }
 
-    // MARK: - Body
-
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                tabPicker
-                if selectedTab != .all { progressSection }
-                if service.isLoading {
-                    Spacer(); ProgressView("טוען..."); Spacer()
-                } else if currentNodes.isEmpty {
-                    emptyState
-                } else {
-                    taskList
+            ZStack {
+                Color(red: 0.059, green: 0.090, blue: 0.161).ignoresSafeArea()
+                VStack(spacing: 0) {
+                    tabPicker
+                    if selectedTab != .all { progressCard }
+                    if service.isLoading {
+                        Spacer()
+                        ProgressView("טוען...").tint(.white)
+                        Spacer()
+                    } else if currentNodes.isEmpty {
+                        emptyState
+                    } else {
+                        taskList
+                    }
                 }
             }
             .navigationTitle("רשימה")
@@ -74,7 +74,9 @@ struct BoardView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { showAdd = true } label: {
-                        Image(systemName: "plus.circle.fill").font(.title2)
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) { seedButton }
@@ -88,26 +90,30 @@ struct BoardView: View {
         }
     }
 
-    // MARK: - Tab Picker
+    // MARK: - Tab picker (pill style)
 
     var tabPicker: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 6) {
             ForEach(ListTab.allCases, id: \.self) { tab in
-                Button { withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab } } label: {
-                    VStack(spacing: 4) {
-                        Text(tab.rawValue)
-                            .font(.system(size: 15, weight: selectedTab == tab ? .bold : .regular))
-                            .foregroundColor(selectedTab == tab ? (tab == .all ? .primary : tabColorFor(tab)) : .secondary)
-                        Rectangle()
-                            .frame(height: 2)
-                            .foregroundColor(selectedTab == tab ? (tab == .all ? .primary : tabColorFor(tab)) : .clear)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { selectedTab = tab }
+                } label: {
+                    Text(tab.rawValue)
+                        .font(.system(size: 14, weight: selectedTab == tab ? .bold : .medium))
+                        .foregroundColor(selectedTab == tab ? .white : .white.opacity(0.38))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            selectedTab == tab
+                                ? (tab == .all ? Color.white.opacity(0.14) : tabColorFor(tab).opacity(0.22))
+                                : Color.clear
+                        )
+                        .clipShape(Capsule())
                 }
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     func tabColorFor(_ tab: ListTab) -> Color {
@@ -115,42 +121,48 @@ struct BoardView: View {
         case .daily:  return .blue
         case .weekly: return .green
         case .yearly: return .orange
-        case .all:    return .primary
+        case .all:    return .white
         }
     }
 
-    // MARK: - Progress Section
+    // MARK: - Progress card
 
-    var progressSection: some View {
-        VStack(spacing: 8) {
+    var progressCard: some View {
+        VStack(spacing: 10) {
             HStack {
-                Text("\(currentDone) / \(currentTotal) משימות")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.secondary)
-                Spacer()
                 Text("\(Int(currentProgress * 100))%")
-                    .font(.system(size: 15, weight: .black))
+                    .font(.system(size: 26, weight: .black))
                     .foregroundColor(tabColor)
+                Spacer()
+                Text("\(currentDone) / \(currentNodes.count)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.38))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(tabColor.opacity(0.15))
-                        .frame(height: 7)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(tabColor.opacity(0.12))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(tabColor)
-                        .frame(width: geo.size.width * currentProgress, height: 7)
+                        .frame(width: geo.size.width * currentProgress, height: 6)
                         .animation(.easeInOut, value: currentProgress)
                 }
             }
-            .frame(height: 7)
+            .frame(height: 6)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(Color(.systemGroupedBackground))
+        .background(Color.white.opacity(0.04))
+        .overlay(
+            Rectangle()
+                .fill(Color.white.opacity(0.07))
+                .frame(height: 1),
+            alignment: .bottom
+        )
     }
 
-    // MARK: - Task List
+    // MARK: - Task list
 
     var taskList: some View {
         List {
@@ -158,29 +170,43 @@ struct BoardView: View {
                 NodeCard(node: node, allNodes: service.nodes)
                     .contentShape(Rectangle())
                     .onTapGesture { selectedNode = node }
+                    .listRowBackground(Color.white.opacity(0.04))
+                    .listRowSeparatorTint(Color.white.opacity(0.07))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    .swipeActions(edge: .leading) {
+                        Button { service.updateStatus(node, to: .done) } label: {
+                            Label("בוצע", systemImage: "checkmark.circle.fill")
+                        }.tint(.green)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) { service.deleteNode(node) } label: {
+                            Label("מחק", systemImage: "trash")
+                        }
+                    }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .environment(\.layoutDirection, .rightToLeft)
     }
 
-    // MARK: - Empty State
+    // MARK: - Empty state
 
     var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Spacer()
             Image(systemName: "tray")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary)
+                .font(.system(size: 44))
+                .foregroundColor(.white.opacity(0.18))
             Text("אין משימות כאן")
                 .font(.title3.bold())
+                .foregroundColor(.white.opacity(0.45))
             Text("הוסף משימה עם התגית המתאימה")
-                .foregroundColor(.secondary)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.28))
             Spacer()
         }
     }
-
-    // MARK: - Seed Button
 
     var seedButton: some View {
         Button("טען נתונים") { SeedData.seed(into: service) }

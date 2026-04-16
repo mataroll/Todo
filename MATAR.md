@@ -90,15 +90,40 @@ Availability-dependent (some require signing up in a chat group):
 
 ---
 
-## The Learning Path (Big Goal)
+## The Big Picture — Where Matar Is Heading
 
-Dream: return to Technion, study chemical engineering. Was overwhelmed by the pace before — now studying independently at own pace.
+### Current situation
+- Works as a **QA engineer** — stable but not enough money, knows he can do better
+- Can code, but has no degree — that limits his ceiling
+- Three parallel paths running simultaneously:
 
-- Currently on: **חשבון 1 (Calculus 1)** — studying the course alone
-- Method: self-paced, course by course in order
-- Once a course is done → weekly practice test to stay sharp
-- **עקומת למידה** = the active course in progress
-- End goal: **חזרה לטכניון / הנדסה כימית**
+### Path 1 — Technion (chemical engineering)
+- The real dream. Was there before, got overwhelmed and left.
+- Strategy: **study the first courses in advance** so when the year starts, he already knows the material. The goal is to walk into the first test without panic — "ok Matar, you've done this, you can handle the pace."
+- Currently on: **חשבון 1 (Calculus 1)** — took his time, understood it deeply
+- After calc 1: target **one week per course** (may take 10 days, but not months). Consume the critical how-to, pass the test — understand deeply later.
+- Once a course is done → **weekly practice test forever** to stay sharp, then move to the next
+
+**Board tracks (three parallel columns):**
+- **Math:** אינפי 1 → אינפי 2 → אלגברה לינארית → מתמטיקה בדידה → הסתברות וסטטיסטיקה
+- **Science:** פיזיקה 1 → פיזיקה 2 (no physics 3 for now) + כימיה כללית after
+- **Coding/CS:** sv collague + Python teacher (parallel) → Leet code → מבוא לC → ארדואינו → build projects
+
+### Path 2 — sv collague (developer internship)
+- A college that brings students developer internships. This is his bridge from QA → software developer with a degree.
+- Runs in parallel with Path 1 — not a detour, a parallel track.
+
+### Path 3 — Python teacher
+- While income is low, teaching Python is good money and real experience.
+- Already teaching (Libby is one student).
+- Goal: grow this into a meaningful income source while the other paths develop.
+
+### Learning style (important for Claude to know)
+- Matar needs to understand **why** things work, not just how. Can't use a formula he hasn't seen derived — his brain rejects it.
+- This is a strength long-term but a liability in fast-paced exams.
+- **Current approach:** force himself to "consume and vomit" — learn the critical how-to, pass the test in a week. Deep understanding comes later or through the weekly review.
+- Key skill he's actively building: **ללמוד איך ללמוד** — learning how to learn efficiently under time pressure.
+- **עקומת למידה** = the active course in progress at any given time
 
 ---
 

@@ -9,9 +9,7 @@ private let supabaseKey = "sb_publishable_PxuPeLkqFbN1RnUy0TTkAw_AFz09yKa"
 private let appGroup = "group.com.mataroll.Todo"
 
 let negativeHabits: [(key: String, icon: String, label: String)] = [
-    ("coke",   "🥤", "קולה"),
-    ("sugar",  "🍫", "סוכר"),
-    ("screen", "📱", "מסך"),
+    ("nofap", "🌸", "ניקיון"),
 ]
 
 private func patchNode(id: String, body: [String: Any]) async {
@@ -46,11 +44,24 @@ struct ConfirmHabitIntent: AppIntent {
         guard !taskId.isEmpty else { return .result() }
         await patchNode(id: taskId, body: ["isConfirmed": !currentValue])
 
-        // Immediately flip the confirmed state in the live activity so UI updates without opening app
+        // Update all live activities that reference this taskId
         for activity in Activity<RingsActivityAttributes>.activities {
             var state = activity.content.state
+            var changed = false
+
+            // Update habit confirmed state (rings activity)
             if let idx = state.habitIds.firstIndex(of: taskId), idx < state.confirmedHabits.count {
                 state.confirmedHabits[idx] = !currentValue
+                changed = true
+            }
+
+            // Update timeline task confirmed state (tasks activity)
+            if let idx = state.timeline.firstIndex(where: { $0.taskId == taskId }) {
+                state.timeline[idx].isConfirmed = !currentValue
+                changed = true
+            }
+
+            if changed {
                 state.updatedAt = Date()
                 await activity.update(ActivityContent(state: state, staleDate: nil))
             }

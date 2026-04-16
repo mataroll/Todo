@@ -11,39 +11,49 @@ struct NodeCard: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Circle()
+        HStack(alignment: .center, spacing: 0) {
+            // Colored status bar on the right (RTL: this is the leading edge visually)
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(statusColor)
-                .frame(width: 10, height: 10)
-                .padding(.top, 6)
+                .frame(width: 3, height: 36)
+                .padding(.trailing, 12)
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text(node.title)
-                    .font(.body)
-                    .foregroundColor(node.status == .done ? .secondary : .primary)
-                    .strikethrough(node.status == .done)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(node.status == .done ? .white.opacity(0.28) : .white.opacity(0.85))
+                    .strikethrough(node.status == .done, color: .white.opacity(0.28))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
 
                 if !blockingNames.isEmpty && node.status != .done {
-                    Text("חסום על ידי: " + blockingNames.joined(separator: ", "))
-                        .font(.caption)
-                        .foregroundColor(.orange)
+                    Text("חסום: " + blockingNames.joined(separator: ", "))
+                        .font(.caption2)
+                        .foregroundColor(.orange.opacity(0.75))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .trailing)
 
-            Image(systemName: "chevron.left")
-                .font(.caption)
-                .foregroundColor(.secondary.opacity(0.5))
+            Spacer()
+
+            // CoachType dot indicator
+            if node.coachType != .none {
+                Circle()
+                    .fill(node.coachType.color.opacity(0.22))
+                    .overlay(Circle().stroke(node.coachType.color.opacity(0.38), lineWidth: 1))
+                    .frame(width: 8, height: 8)
+                    .padding(.leading, 10)
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 4)
     }
 
     var statusColor: Color {
         switch node.status {
-        case .blocked:    return .gray
+        case .blocked:    return .gray.opacity(0.45)
         case .open:       return .yellow
         case .inProgress: return .green
-        case .done:       return .blue
+        case .done:       return .blue.opacity(0.35)
         }
     }
 }

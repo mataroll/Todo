@@ -32,6 +32,7 @@ struct ContentView: View {
                     Label("כסף", systemImage: "banknote")
                 }
         }
+        .preferredColorScheme(.dark)
         .environment(\.layoutDirection, .rightToLeft)
     }
 }

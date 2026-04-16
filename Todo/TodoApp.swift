@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import UserNotifications
 import ActivityKit
+import CoreLocation
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -23,7 +24,7 @@ struct TodoApp: App {
                 .onAppear {
                     firebaseService.startListening()
                     firebaseService.fetchDailyLogs()
-                    Task { await EventKitManager.shared.requestPermissions() }
+                    NotificationManager.shared.rescheduleAll()
                     let nodes = firebaseService.nodes.isEmpty ? SeedData.getSeedNodes() : firebaseService.nodes
                     let rings = HomeView.buildRings(nodes: nodes)
                     LiveActivityManager.shared.update(rings: rings, nodes: nodes)

@@ -2,7 +2,6 @@ import ActivityKit
 import SwiftUI
 
 // Shared types needed by both the main app and widget extension.
-// These must match the definitions in Todo/RingsActivityAttributes.swift exactly.
 
 struct RingState: Codable, Hashable {
     let id: String
@@ -15,10 +14,17 @@ struct TimelineTask: Codable, Hashable {
     let title: String
     let startTime: String
     let endTime: String
-    let status: String // "now", "next", "dim"
+    let status: String       // "now", "next", "dim"
+    let taskId: String
+    var isConfirmed: Bool
 }
 
 struct RingsActivityAttributes: ActivityAttributes {
+    enum Mode: String, Codable { case tasks, rings }
+
+    let mode: Mode
+    let taskOffset: Int  // for tasks mode: first task index to show (0, 2, 4…)
+
     struct ContentState: Codable, Hashable {
         var rings: [RingState]
         var streakCount: Int

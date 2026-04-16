@@ -2,6 +2,303 @@ This is a comprehensive "Source of Truth" document for your app. You can feed th
 
 ---
 
+# Current UI Inventory — Every Screen & Extension
+
+## App Screens
+
+---
+
+### 1. Home (דף הבית)
+**File:** `HomeView.swift`
+**Tab:** house.fill icon
+
+**Current layout (top to bottom):**
+- Navigation title: "שלום, מטר"
+- Activity rings row — 3 nested rings (blue=daily, green=weekly, yellow=budget)
+- Summary header — day of year number + daily % complete + ₪ symbol (large, decorative)
+- Stats grid — 2×2 grid of cards:
+  - יתרה לתקציב (₪ remaining from ₪2000)
+  - יעדי שבוע (X/Y weekly tasks done)
+  - רצף ימים (hardcoded 12 — not wired to real streak yet)
+  - משימות פתוחות (count of non-done tasks)
+- Streak calendar (StreakCalendarView) — full month grid, each day colored by % complete
+- ביצוע הרגלים — row of up to 3 daily habit buttons, tap to confirm
+- משימות פעילות — list of up to 5 inProgress/weekly tasks, tap to mark done
+
+**Known issues:**
+- Streak count is hardcoded to 12
+- Habit buttons use first character of title as icon (no proper emoji/icon per habit)
+- No visual hierarchy — everything is the same weight
+- Habit confirm only shows 3 habits even if there are more
+
+---
+
+### 2. List (רשימה)
+**File:** `BoardView.swift`
+**Tab:** list.bullet icon
+
+**Current layout:**
+- Navigation title: "רשימה"
+- Segmented tab picker: יומי | שבועי | שנתי | הכל
+- Progress bar (colored by tab: blue/green/orange) — shows X/Y done + %
+- Task list — each row:
+  - Status dot (colored circle)
+  - Task title (RTL)
+  - CoachType badge
+  - Tap → NodeDetailView sheet
+  - Swipe → mark done / delete
+- Toolbar: + button (add task), seed button (dev only)
+- הכל tab excludes budget tasks
+
+**Known issues:**
+- No grouping by category within הכל
+- No search/filter
+- List rows are plain — no visual distinction between blocked/open/inProgress
+
+---
+
+### 3. Detective Board (לוח בלש)
+**File:** `DetectiveBoardView.swift`
+**Tab:** custom BoardIcon
+
+**Current layout:**
+- Full-screen zoomable/scrollable cork board (4200×2200 canvas)
+- Background: warm brown texture color
+- Node cards (sticky notes) positioned on canvas:
+  - S/M/L sizes
+  - Color by status (yellow=open, green=inProgress, red=blocked, gray=done)
+  - Slight random tilt
+  - Pin shadow at top
+- Red string connections between related nodes (line drawn on Canvas)
+- Category headlines (draggable text labels, white on dark bg)
+- Free labels (user-created floating text)
+- Toggle to hide/show purchases
+
+**Gestures:**
+- Pinch/scroll: zoom and pan (UIScrollView)
+- Long press card → CardActionMenu overlay (edit, connect, size, delete)
+- Long press connection → ConnectionDeleteMenu
+- Long press empty board → BoardTapMenu (create task or headline)
+- Drag headline → move headline
+- Drag card → move card (position saved to Supabase)
+
+**Known issues:**
+- Cards can't be dragged with a simple drag (requires long press first)
+- No minimap for orientation
+- Category labels and free labels are visually similar — confusing
+- Connection lines have no labels
+
+---
+
+### 4. Money (כסף)
+**File:** `MoneyView.swift`
+**Tab:** banknote icon
+
+**Current layout:**
+- Placeholder only: "כסף" title + "בקרוב" text
+- Completely empty — not built yet
+
+**Planned:**
+- Bank statement import (via Saturday Claude session)
+- Budget ring
+- Spending categories
+- Purchase list (budget coachType tasks)
+
+---
+
+## Modal Sheets & Overlays
+
+---
+
+### 5. Card Edit Sheet
+**File:** `CardEditSheet.swift`
+**Triggered by:** long press card → edit button in CardActionMenu
+
+**Current sections (Form):**
+- שם — text field for title
+- סטטוס — segmented picker (חסום / פתוח / בתהליך / הושלם)
+- גודל — segmented picker (S / M / L)
+- צבע כרטיסייה — ColorPicker
+- לינק — URL text field
+- הערות — multi-line text editor
+- תמונות — horizontal scroll of attached photos + add from library/camera
+- קבצים — list of attached files + add file button
+- תזכורת ויומן — two toggles (✅ Apple Reminders / 📅 Apple Calendar) + date picker + end time picker
+- יוצא מכאן → — outgoing connections list (swipe to delete)
+- נכנס לכאן ← — incoming connections list (swipe to delete)
+- Toolbar: ביטול / שמור
+
+**Known issues:**
+- Form is very long — no visual grouping or collapsing
+- No way to set recurrence (deferred to Apple Reminders/Calendar app)
+- Color picker is system default — not customized
+- Status picker is redundant with swipe actions in list
+
+---
+
+### 6. Card Action Menu (Board overlay)
+**File:** `CardActionMenu.swift`
+**Triggered by:** long press card on detective board
+
+**Current layout:**
+- Blur backdrop (ultraThinMaterial)
+- Card preview (scaled 1.15×) with shadow
+- עריכה button → opens CardEditSheet
+- חיבור button → opens ConnectionPickerView
+- Size picker row (S/M/L inline)
+- מחק משימה button (red)
+- ביטול text button
+
+---
+
+### 7. Node Detail View
+**File:** `NodeDetailView.swift`
+**Triggered by:** tap task row in BoardView (רשימה)
+
+**Current sections:**
+- Header: status badge + title + notes
+- שינוי סטטוס — buttons for all 4 statuses
+- קבצים ומסמכים — (TODO placeholder, not implemented)
+- תלויות — list of dependency nodes
+- Toolbar: ✏️ edit button → CardEditSheet
+
+---
+
+### 8. Add Node View
+**File:** `AddNodeView.swift`
+**Triggered by:** + button in רשימה toolbar
+
+**Current fields:**
+- Title text field
+- Category picker
+- CoachType picker
+- Priority field
+- Save / Cancel buttons
+
+---
+
+### 9. Connection Picker
+**File:** `ConnectionPickerView.swift`
+**Triggered by:** חיבור button in CardActionMenu
+
+**Current layout:**
+- List of all nodes
+- Tap to toggle connection from current node → selected node
+- Color picker per connection
+- Shows existing connections with delete option
+
+---
+
+### 10. Streak Calendar
+**File:** `StreakCalendarView.swift`
+**Embedded in:** HomeView
+
+**Current layout:**
+- Month grid (7 columns × ~5 rows)
+- Each day cell colored by overallProgress:
+  - Gray = no data
+  - Blue gradient = partial
+  - Green = perfect day (all habits done)
+- Tap day → shows breakdown by category (exercise/work/study/hobby) with progress bars
+
+---
+
+## Widget Extensions
+
+---
+
+### 11. Lock Screen Widget — Pulse
+**File:** `TodoWidget.swift` → `LockScreenPulseView`
+**Size:** accessoryRectangular
+**Position:** lock screen (left slot)
+
+**Current content:**
+- 3 nested rings (blue=daily, green=weekly, yellow=budget) — small, ~32pt
+- 3 percentage numbers: daily% | weekly% | budget%
+- ₪ total spending (sum of purchases > ₪200)
+- Dark background
+
+---
+
+### 12. Lock Screen Widget — Avoid
+**File:** `AvoidWidget.swift` → `AvoidLockScreenView`
+**Size:** accessoryRectangular
+**Position:** lock screen (right slot)
+
+**Current content:**
+- 3 icons: 🥤 🍫 📱
+- Slip count below each icon (red if > 0)
+- Tap any icon → records a slip (via RecordSlipIntent, no app open)
+- Refreshes every 15 min
+
+**Missing:** 2 AVOID habits not shown (no phone in bed, no jerk off — private, intentionally excluded)
+
+---
+
+### 13. Home Screen Widget — Small Pulse
+**File:** `TodoWidget.swift` → `PulseWidgetView`
+**Size:** systemSmall
+
+**Current content:**
+- Same as lock screen Pulse but larger
+- 3 nested rings + 3 numbers + ₪ spending
+- Dark background (near-black)
+
+**Issue:** Nearly identical to lock screen Pulse — wasted opportunity for different content
+
+---
+
+### 14. Home Screen Widget — Weekly Vision
+**File:** `TodoWidget.swift` → `WeeklyVisionWidgetView`
+**Size:** systemLarge
+
+**Current content:**
+- Header: "שבוע X" badge + "משימות עד שבת" title
+- List of up to 5 weekly tasks with ✓ checkmark buttons (tap = mark done via MarkTaskDoneIntent)
+- Footer: ₪ remaining + "עקביות היא המפתח" quote
+- White background
+
+---
+
+### 15. Live Activity — Execution Board
+**File:** `RingsLiveActivity.swift` → `CoachLiveActivityView`
+**Size:** expanded lock screen banner (~160pt height)
+
+**Current content:**
+- Top row: 🔥 streak + codenames (both hardcoded)
+- Timeline: 3 rows (now=cyan, next=white, dim=faded) — empty unless nodes have startTime/endTime
+- Habits row: up to 3 habit icons, tap to confirm (via ConfirmHabitIntent, updates live instantly)
+- Avoid row: 🥤 🍫 📱 tap to record slip (via RecordSlipIntent)
+- Pulse rings (small, right side)
+
+**Known issues:**
+- Streak hardcoded to 12
+- Codenames hardcoded to "TWD · CITRON · HF"
+- Timeline always empty (no nodes have startTime/endTime)
+- All habits show 🏃 regardless of category
+
+---
+
+### 16. Dynamic Island — Compact
+**File:** `RingsLiveActivity.swift`
+**Position:** top pill when phone is unlocked
+
+**Leading (left):** 3 mini rings (CompactRingsView)
+**Trailing (right):** daily % — BUG: always shows 0% (operator precedence issue)
+**Minimal:** single blue ring (progress only)
+
+---
+
+### 17. Dynamic Island — Expanded
+**File:** `RingsLiveActivity.swift`
+**Position:** when user long-presses the pill
+
+**Leading:** 3 rings (CompactRingsView)
+**Trailing:** hardcoded "38%"
+**Bottom:** full CoachLiveActivityView (same as lock screen banner)
+
+---
+
 # 📱 Project Brief: "Coach" — Personal Dashboards
 **Philosophy:** A privacy-first, glanceable life-coach that tracks time, progress, and finances through a "Tap-to-Confirm" interaction model.
 

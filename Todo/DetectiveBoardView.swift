@@ -164,7 +164,7 @@ struct DetectiveBoardView: View {
         for node in displayNodes {
             guard let nodeId = node.id else { continue }
             let from = livePositions[nodeId] ?? service.positions[nodeId] ?? defaultPositions[nodeId] ?? CGPoint(x: 200, y: 200)
-            let p1 = CGPoint(x: from.x, y: from.y - pinOffset)
+            let p1 = CGPoint(x: from.x, y: from.y + 40)
             for conn in node.connections {
                 guard displayNodes.contains(where: { $0.id == conn.toId }) else { continue }
                 let to = livePositions[conn.toId] ?? service.positions[conn.toId] ?? defaultPositions[conn.toId] ?? CGPoint(x: 200, y: 200)
@@ -401,8 +401,8 @@ struct DetectiveBoardView: View {
 
                         let lineColor = Color(hex: conn.colorHex) ?? .red
                         let pinOffset: CGFloat = 35
-                        let p1 = CGPoint(x: from.x, y: from.y - pinOffset)
-                        let p2 = CGPoint(x: to.x,   y: to.y   - pinOffset)
+                        let p1 = CGPoint(x: from.x, y: from.y + 40)   // bottom center of source card
+                        let p2 = CGPoint(x: to.x,   y: to.y - pinOffset) // top/pin of destination card
 
                         let dx = p2.x - p1.x, dy = p2.y - p1.y
                         let length = sqrt(dx*dx + dy*dy)

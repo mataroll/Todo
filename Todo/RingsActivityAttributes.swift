@@ -1,7 +1,7 @@
 import ActivityKit
 import SwiftUI
 
-// MARK: - Shared ring state (codable for ActivityKit)
+// Mirror of TodoWidget/SharedTypes.swift — both files must stay in sync.
 
 struct RingState: Codable, Hashable {
     let id: String
@@ -14,10 +14,17 @@ struct TimelineTask: Codable, Hashable {
     let title: String
     let startTime: String
     let endTime: String
-    let status: String // "now", "next", "dim"
+    let status: String       // "now", "next", "dim"
+    let taskId: String
+    var isConfirmed: Bool
 }
 
 struct RingsActivityAttributes: ActivityAttributes {
+    enum Mode: String, Codable { case tasks, rings }
+
+    let mode: Mode
+    let taskOffset: Int  // for tasks mode: first task index to show (0, 2, 4…)
+
     struct ContentState: Codable, Hashable {
         var rings: [RingState]
         var streakCount: Int
@@ -25,7 +32,7 @@ struct RingsActivityAttributes: ActivityAttributes {
         var codenames: String
         var habitSymbols: [String]
         var confirmedHabits: [Bool]
-        var habitIds: [String]       // Firestore doc IDs for each habit
+        var habitIds: [String]
         var updatedAt: Date
     }
 }
