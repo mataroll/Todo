@@ -197,11 +197,20 @@ class SupabaseService: ObservableObject {
         let y: Double
     }
 
+    private var positionTimer: Timer?
+
     func startListeningPositions() {
         Task { await fetchPositions() }
+        positionTimer?.invalidate()
+        positionTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            Task { await self?.fetchPositions() }
+        }
     }
 
-    func stopListeningPositions() {}
+    func stopListeningPositions() {
+        positionTimer?.invalidate()
+        positionTimer = nil
+    }
 
     private func fetchPositions() async {
         guard let req = request(path: "node_positions?select=*") else { return }
@@ -270,6 +279,19 @@ class SupabaseService: ObservableObject {
     }
 
     // MARK: - Wipe & Reseed
+
+    func deleteAllNodes() {
+        Task {
+            if let req = request(path: "nodes?id=neq.__never__", method: "DELETE") {
+                _ = try? await URLSession.shared.data(for: req)
+            }
+            if let req = request(path: "node_positions?id=neq.__never__", method: "DELETE") {
+                _ = try? await URLSession.shared.data(for: req)
+            }
+            positions = [:]
+            nodes = []
+        }
+    }
 
     func wipeAndReseed() {
         Task {

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>לוח בלש — תצוגה מקדימה</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top bar ── */
+  #topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: #16213e;
+    border-bottom: 1px solid #0f3460;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  #topbar h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: #e94560; color: #fff; }
+  .btn-secondary { background: #0f3460; color: #eee; }
+  .btn-active { background: #533483; color: #fff; }
+
+  #status { font-size: 13px; color: #aaa; margin-right: auto; }
+
+  /* ── Tab body ── */
+  #content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  /* ── Board tab ── */
+  #board-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    background: radial-gradient(ellipse at 20% 20%, #5c3317 0%, #3b1f0d 60%, #2b160a 100%);
+  }
+  #board-wrap.grabbing { cursor: grabbing; }
+
+  #board-canvas {
+    position: absolute;
+    transform-origin: 0 0;
+  }
+
+  .node-card {
+    position: absolute;
+    width: 140px;
+    border-radius: 3px;
+    padding: 10px 9px 7px;
+    font-size: 11px;
+    line-height: 1.4;
+    box-shadow: 3px 3px 8px rgba(0,0,0,.55);
+    cursor: default;
+    user-select: none;
+    transform-origin: center center;
+  }
+  .node-card .card-title {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 4px;
+    word-break: break-word;
+    text-align: right;
+  }
+  .node-card .card-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: #555;
+    margin-top: 2px;
+  }
+  .pin {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #b02020;
+    box-shadow: 0 1px 3px rgba(0,0,0,.6);
+    position: absolute;
+    top: -5px; left: 50%; transform: translateX(-50%);
+  }
+
+  /* status colours */
+  .s-open     { background: #f9f5d0; }
+  .s-inprogress { background: #d0f0d0; }
+  .s-blocked  { background: #f5d0d0; }
+  .s-done     { background: #c8c8c8; }
+
+  /* category label badge */
+  .cat-badge {
+    display: inline-block;
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(0,0,0,.12);
+    color: #444;
+  }
+
+  /* headline labels */
+  .headline-label {
+    position: absolute;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 1px 1px 4px rgba(0,0,0,.7);
+    background: rgba(0,0,0,.3);
+    padding: 2px 8px;
+    border-radius: 5px;
+    pointer-events: none;
+  }
+
+  /* ── Files tab ── */
+  #files-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: none;
+  }
+  #files-panel.active { display: block; }
+  .bucket-section { margin-bottom: 28px; }
+  .bucket-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e94560;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #0f3460;
+    padding-bottom: 6px;
+  }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #ccc;
+    background: rgba(255,255,255,.04);
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+  .file-row .file-icon { font-size: 18px; flex-shrink: 0; }
+  .file-row .file-size { color: #777; font-size: 11px; margin-right: auto; flex-shrink: 0; }
+  .file-row a { color: #7ec8e3; text-decoration: none; font-size: 11px; }
+  .file-row a:hover { text-decoration: underline; }
+  .no-files { color: #666; font-size: 13px; padding: 8px 0; }
+
+  /* ── Stats bar ── */
+  #stats-bar {
+    display: flex;
+    gap: 16px;
+    padding: 6px 20px;
+    background: #16213e;
+    border-top: 1px solid #0f3460;
+    font-size: 12px;
+    color: #888;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  #stats-bar span b { color: #eee; }
+
+  .loading-msg {
+    color: #aaa;
+    padding: 40px;
+    font-size: 15px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>🔍 לוח בלש</h1>
+  <button class="btn btn-primary" id="btn-load">טען לוח</button>
+  <button class="btn btn-secondary btn-active" id="btn-board" onclick="showTab('board')">לוח</button>
+  <button class="btn btn-secondary" id="btn-files" onclick="showTab('files')">קבצים בענן</button>
+  <span id="status">לא טעון</span>
+</div>
+
+<div id="content">
+  <div id="board-wrap">
+    <div id="board-canvas"></div>
+  </div>
+  <div id="files-panel"></div>
+</div>
+
+<div id="stats-bar">
+  <span>משימות: <b id="stat-total">–</b></span>
+  <span>פתוח: <b id="stat-open">–</b></span>
+  <span>בתהליך: <b id="stat-prog">–</b></span>
+  <span>חסום: <b id="stat-blocked">–</b></span>
+  <span>הושלם: <b id="stat-done">–</b></span>
+  <span>עם מיקום: <b id="stat-pos">–</b></span>
+</div>
+
+<script>
+const SUPA_URL = "https://zsrxynhmvomxocnvkcxa.supabase.co";
+const SUPA_KEY = "sb_publishable_PxuPeLkqFbN1RnUy0TTkAw_AFz09yKa";
+
+const CATEGORY_LABELS = {
+  keyBlockers: "חוסמים מרכזיים",
+  goals:       "מטרות",
+  doctors:     "רופאים",
+  friends:     "חברים",
+  creative:    "יצירתי",
+  tech:        "טכנולוגיה",
+  purchases:   "רכישות",
+  recurring:   "חוזרים",
+  dreams:      "חלומות",
+  reminders:   "תזכורות",
+  oneTime:     "חד פעמי",
+  soul:        "נפש",
+};
+
+// Default spread origins (matches Swift code)
+const CATEGORY_ORIGINS = {
+  keyBlockers: { x: 1700, y: 100 },
+  goals:       { x: 200,  y: 380 },
+  doctors:     { x: 200,  y: 800 },
+  friends:     { x: 3200, y: 100 },
+  creative:    { x: 200,  y: 1300 },
+  tech:        { x: 1300, y: 380 },
+  purchases:   { x: 1300, y: 820 },
+  recurring:   { x: 3200, y: 500 },
+  dreams:      { x: 1300, y: 1750 },
+  reminders:   { x: 3200, y: 950 },
+  oneTime:     { x: 3200, y: 1350 },
+  soul:        { x: 700,  y: 100 },
+};
+const COLS = 5, COL_SP = 185, ROW_SP = 115;
+
+async function supaFetch(path) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+  });
+  return r.json();
+}
+
+async function storageFetch(path, method = "GET", body = null) {
+  const opts = {
+    method,
+    headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}`, "Content-Type": "application/json" }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${SUPA_URL}/storage/v1/${path}`, opts);
+  return r.json();
+}
+
+// ── Tab switching ──
+let currentTab = "board";
+function showTab(tab) {
+  currentTab = tab;
+  document.getElementById("board-wrap").style.display  = tab === "board"  ? "block" : "none";
+  document.getElementById("files-panel").style.display = tab === "files"  ? "block" : "none";
+  document.getElementById("btn-board").className = "btn btn-secondary" + (tab === "board"  ? " btn-active" : "");
+  document.getElementById("btn-files").className = "btn btn-secondary" + (tab === "files" ? " btn-active" : "");
+}
+showTab("board");
+
+// ── Load button ──
+document.getElementById("btn-load").addEventListener("click", loadAll);
+
+async function loadAll() {
+  document.getElementById("status").textContent = "טוען...";
+  try {
+    const [nodes, positions] = await Promise.all([
+      supaFetch("nodes?select=*"),
+      supaFetch("node_positions?select=*")
+    ]);
+    renderBoard(nodes, positions);
+    updateStats(nodes, positions);
+
+    // Load files in background
+    loadFiles();
+    document.getElementById("status").textContent = `נטען — ${nodes.length} משימות, ${positions.length} מיקומים`;
+  } catch (e) {
+    document.getElementById("status").textContent = "שגיאה: " + e.message;
+  }
+}
+
+// ── Board render ──
+function computeDefaultPos(nodes) {
+  const catCount = {};
+  const sorted = [...nodes].sort((a, b) => {
+    const catA = a.category || "", catB = b.category || "";
+    if (catA !== catB) return catA.localeCompare(catB);
+    return (a.title || "").localeCompare(b.title || "");
+  });
+  const result = {};
+  for (const node of sorted) {
+    const cat = node.category || "oneTime";
+    const idx = catCount[cat] || 0;
+    catCount[cat] = idx + 1;
+    const origin = CATEGORY_ORIGINS[cat] || { x: 200, y: 200 };
+    result[node.id] = {
+      x: origin.x + (idx % COLS) * COL_SP,
+      y: origin.y + Math.floor(idx / COLS) * ROW_SP
+    };
+  }
+  return result;
+}
+
+function statusClass(s) {
+  if (s === "inProgress") return "s-inprogress";
+  if (s === "blocked")    return "s-blocked";
+  if (s === "done")       return "s-done";
+  return "s-open";
+}
+
+function tilt(title) {
+  const h = [...(title || "")].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return (h % 9 - 4) * 0.4;
+}
+
+function renderBoard(nodes, positions) {
+  const canvas = document.getElementById("board-canvas");
+  canvas.innerHTML = "";
+
+  const posMap = {};
+  for (const p of positions) posMap[p.id] = { x: p.x, y: p.y };
+
+  const defaults = computeDefaultPos(nodes);
+  const finalPos = {};
+  for (const n of nodes) {
+    finalPos[n.id] = posMap[n.id] || defaults[n.id] || { x: 200, y: 200 };
+  }
+
+  // Category headline labels
+  const rendered = new Set();
+  for (const n of nodes) {
+    const cat = n.category;
+    if (!rendered.has(cat)) {
+      rendered.add(cat);
+      const origin = CATEGORY_ORIGINS[cat] || { x: 200, y: 200 };
+      const lbl = document.createElement("div");
+      lbl.className = "headline-label";
+      lbl.textContent = CATEGORY_LABELS[cat] || cat;
+      lbl.style.left = (origin.x + COLS * COL_SP / 2 - 40) + "px";
+      lbl.style.top  = (origin.y - 40) + "px";
+      canvas.appendChild(lbl);
+    }
+  }
+
+  // Node cards
+  let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+  for (const n of nodes) {
+    const pos = finalPos[n.id];
+    const card = document.createElement("div");
+    card.className = `node-card ${statusClass(n.status)}`;
+    card.style.left = pos.x + "px";
+    card.style.top  = pos.y + "px";
+    card.style.transform = `rotate(${tilt(n.title)}deg)`;
+    card.title = [n.notes, n.category].filter(Boolean).join(" | ");
+
+    const pin = document.createElement("div");
+    pin.className = "pin";
+    card.appendChild(pin);
+
+    const title = document.createElement("div");
+    title.className = "card-title";
+    title.textContent = n.title || "—";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    meta.innerHTML = `<span class="cat-badge">${CATEGORY_LABELS[n.category] || n.category || ""}</span>`;
+    card.appendChild(meta);
+
+    canvas.appendChild(card);
+
+    minX = Math.min(minX, pos.x);
+    minY = Math.min(minY, pos.y);
+    maxX = Math.max(maxX, pos.x + 160);
+    maxY = Math.max(maxY, pos.y + 80);
+  }
+
+  const PAD = 80;
+  canvas.style.width  = (maxX + PAD) + "px";
+  canvas.style.height = (maxY + PAD) + "px";
+
+  // Fit to view
+  const wrap = document.getElementById("board-wrap");
+  const scaleX = wrap.clientWidth  / (maxX - minX + PAD * 2);
+  const scaleY = wrap.clientHeight / (maxY - minY + PAD * 2);
+  const scale  = Math.min(scaleX, scaleY, 1);
+  panX = -minX * scale + PAD;
+  panY = -minY * scale + PAD;
+  currentScale = scale;
+  applyTransform();
+}
+
+// ── Pan & zoom ──
+let currentScale = 0.35, panX = 0, panY = 0;
+let isPanning = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+
+function applyTransform() {
+  document.getElementById("board-canvas").style.transform =
+    `translate(${panX}px, ${panY}px) scale(${currentScale})`;
+}
+
+const wrap = document.getElementById("board-wrap");
+
+wrap.addEventListener("mousedown", e => {
+  if (e.button !== 0) return;
+  isPanning = true;
+  startX = e.clientX; startY = e.clientY;
+  startPanX = panX; startPanY = panY;
+  wrap.classList.add("grabbing");
+});
+window.addEventListener("mousemove", e => {
+  if (!isPanning) return;
+  panX = startPanX + (e.clientX - startX);
+  panY = startPanY + (e.clientY - startY);
+  applyTransform();
+});
+window.addEventListener("mouseup", () => {
+  isPanning = false;
+  wrap.classList.remove("grabbing");
+});
+wrap.addEventListener("wheel", e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  const rect = wrap.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * factor;
+  panY = my - (my - panY) * factor;
+  currentScale = Math.max(0.05, Math.min(4, currentScale * factor));
+  applyTransform();
+}, { passive: false });
+
+// ── Stats ──
+function updateStats(nodes, positions) {
+  const counts = { open: 0, inProgress: 0, blocked: 0, done: 0 };
+  for (const n of nodes) counts[n.status] = (counts[n.status] || 0) + 1;
+  document.getElementById("stat-total").textContent   = nodes.length;
+  document.getElementById("stat-open").textContent    = counts.open    || 0;
+  document.getElementById("stat-prog").textContent    = counts.inProgress || 0;
+  document.getElementById("stat-blocked").textContent = counts.blocked  || 0;
+  document.getElementById("stat-done").textContent    = counts.done     || 0;
+  document.getElementById("stat-pos").textContent     = positions.length;
+}
+
+// ── Files ──
+function fileIcon(name) {
+  const ext = (name || "").split(".").pop().toLowerCase();
+  if (["png","jpg","jpeg","gif","webp","heic"].includes(ext)) return "🖼️";
+  if (["pdf"].includes(ext)) return "📄";
+  if (["mp4","mov","avi"].includes(ext)) return "🎬";
+  if (["mp3","m4a","wav"].includes(ext)) return "🎵";
+  if (["zip","tar","gz"].includes(ext)) return "🗜️";
+  if (["json","csv","txt","md"].includes(ext)) return "📝";
+  return "📎";
+}
+
+function formatSize(bytes) {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+async function loadFiles() {
+  const panel = document.getElementById("files-panel");
+  panel.innerHTML = "<div class='loading-msg'>טוען קבצים...</div>";
+
+  try {
+    const buckets = await storageFetch("bucket");
+    if (!Array.isArray(buckets) || buckets.length === 0) {
+      panel.innerHTML = "<div class='loading-msg'>לא נמצאו buckets בענן</div>";
+      return;
+    }
+
+    panel.innerHTML = "";
+    for (const bucket of buckets) {
+      const section = document.createElement("div");
+      section.className = "bucket-section";
+
+      const heading = document.createElement("div");
+      heading.className = "bucket-title";
+      heading.textContent = `🪣 ${bucket.name}`;
+      section.appendChild(heading);
+
+      // List objects
+      const objects = await storageFetch(`object/list/${bucket.name}`, "POST", {
+        limit: 500, offset: 0, sortBy: { column: "name", order: "asc" }
+      });
+
+      if (!Array.isArray(objects) || objects.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "no-files";
+        empty.textContent = "ריק";
+        section.appendChild(empty);
+      } else {
+        for (const obj of objects) {
+          const row = document.createElement("div");
+          row.className = "file-row";
+          const publicUrl = `${SUPA_URL}/storage/v1/object/public/${bucket.name}/${obj.name}`;
+          row.innerHTML = `
+            <span class="file-icon">${fileIcon(obj.name)}</span>
+            <span style="flex:1">${obj.name}</span>
+            <span class="file-size">${formatSize(obj.metadata?.size)}</span>
+            <a href="${publicUrl}" target="_blank">פתח</a>
+          `;
+          section.appendChild(row);
+        }
+      }
+      panel.appendChild(section);
+    }
+  } catch (e) {
+    panel.innerHTML = `<div class='loading-msg'>שגיאה בטעינת קבצים: ${e.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>

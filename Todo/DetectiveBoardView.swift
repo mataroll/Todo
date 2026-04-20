@@ -127,6 +127,7 @@ struct DetectiveBoardView: View {
     @State private var connectionToDelete: (fromId: String, toId: String)? = nil
     @State private var showQuickAddTask = false
     @State private var showQuickAddHeadline = false
+    @State private var showDeleteAllConfirm = false
 
     var displayNodes: [Node] {
         hidePurchases ? service.nodes.filter { $0.category != .purchases } : service.nodes
@@ -270,6 +271,14 @@ struct DetectiveBoardView: View {
                             .font(.footnote)
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showDeleteAllConfirm = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
             }
             .onAppear {
                 computeDefaultPositions()
@@ -286,6 +295,23 @@ struct DetectiveBoardView: View {
             }
             .onDisappear {
                 service.stopListeningPositions()
+            }
+            .confirmationDialog("מחיקת כל הלוח", isPresented: $showDeleteAllConfirm, titleVisibility: .visible) {
+                Button("מחק הכל", role: .destructive) {
+                    service.deleteAllNodes()
+                    // Clear local headline + label UserDefaults too
+                    UserDefaults.standard.removeObject(forKey: "board_headlines_v1")
+                    UserDefaults.standard.removeObject(forKey: "board_free_labels_v1")
+                    headlinePositions = [:]
+                    headlineFontSizes = [:]
+                    headlineTexts = [:]
+                    freeLabels = [:]
+                    livePositions = [:]
+                    defaultPositions = [:]
+                }
+                Button("ביטול", role: .cancel) {}
+            } message: {
+                Text("פעולה זו תמחק את כל המשימות, המיקומים והכותרות מהלוח. לא ניתן לבטל.")
             }
             .sheet(isPresented: $showQuickAddTask) {
                 if let pt = boardTapPoint {

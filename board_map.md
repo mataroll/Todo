@@ -27,7 +27,7 @@
 ← x=385  מתמטיקה בדידה ⚠️ (should be below אינפי 2 + אלגברה)
 ← x=570  מבוא לC ⚠️ (should be below Leet code)
 ← x=940  פיזיקה 1 ⚠️ (should be row 2, same level as אינפי 2)
-+ mixed with: medical nodes, purchases
++ mixed with: me-dical nodes, purchases
 
 ### Row 5 — y≈910
 ← x=200  פיזיקה 2 ⚠️ (should be below פיזיקה 1, not same row)
